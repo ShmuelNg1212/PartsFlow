@@ -39,6 +39,7 @@ Do not build these: accounting, payroll, supplier purchasing, ecommerce, chatbot
 | Change settings | no | yes |
 
 - **R-ROLE-1** The backend enforces every permission. Hiding a button is not enforcement.
+- **R-ROLE-2** Owners invite members. There is no public sign-up.
 
 ## Screens
 
@@ -93,8 +94,8 @@ One application shell. Client-side routes. Browser back, refresh, and direct lin
 - **R-POST-6** Posting is idempotent. Repeat clicks, retries, and concurrent submissions post a document once only.
 - **R-POST-7** Concurrent sales cannot make a balance negative.
 - **R-POST-8** A sale with insufficient stock is blocked. The message names the product, the quantity on hand, and the quantity requested.
-- **R-POST-9** Likely duplicates are found by document number + counterparty and by file hash. A duplicate needs review. Only an owner can override, with a reason.
-- **R-POST-10** A posted document does not change. To correct it, an owner reverses it with a reason. The reversal makes compensating movements linked to the original.
+- **R-POST-9** Likely duplicates are found by document number + counterparty + direction and by file hash. A duplicate needs review. Only an owner can override, with a reason.
+- **R-POST-10** A posted document does not change. To correct it, an owner reverses the whole document with a reason. The reversal makes compensating movements linked to the original. A reversal that would make a balance negative is blocked.
 - **R-POST-11** When the invoice unit differs from the product's base unit, the user enters an explicit conversion factor. The app never guesses a conversion.
 
 ### 4. Stock lookup
@@ -147,16 +148,16 @@ Each check must be an automated test (Vitest or Playwright) that can fail.
 | Unauthorised users cannot post movements or read private files | R-ROLE-1, R-DATA-5, R-DATA-7 |
 | Capture or manual entry → review → confirm → stock lookup works on desktop and phone layouts | Workflows 2–4 |
 
-## Assumptions
+## Decisions beyond the brief
 
-The brief does not settle these. They are defaults until the human decides otherwise.
+The brief did not settle these. The human confirmed them on 2026-10-18 ([ADR 0004](../adr/0004-confirmed-pilot-rule-details.md)). They are rules, the same as the rules above.
 
-- A1. Only owners override a duplicate warning (R-POST-9) and change settings.
-- A2. The duplicate key is document number + counterparty + direction, plus the file hash.
-- A3. Low stock means balance at or below the reorder threshold.
-- A4. A reversal reverses a whole document, not single lines. To correct one line, reverse the document and post a corrected one.
-- A5. A reversal that would make a balance negative is blocked, the same as R-POST-8.
-- A6. Owners invite members. There is no public sign-up.
+- D1. Only owners override a duplicate warning (R-POST-9) and change settings.
+- D2. The duplicate key is document number + counterparty + direction, plus the file hash (R-POST-9).
+- D3. Low stock means balance at or below the reorder threshold (R-STOCK-1).
+- D4. A reversal reverses a whole document, not single lines. To correct one line, reverse the document and post a corrected one (R-POST-10).
+- D5. A reversal that would make a balance negative is blocked, the same as R-POST-8 (R-POST-10).
+- D6. Owners invite members. There is no public sign-up (R-ROLE-2).
 
 ## Pilot evaluation
 

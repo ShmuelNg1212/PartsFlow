@@ -74,7 +74,7 @@ Each kind of knowledge has one home. Look there first; write there only.
 
 ## Product invariants
 
-These come from [spec.md](doc/wiki/spec.md) and ADRs 0001–0003. Never weaken them without an ADR.
+These come from [spec.md](doc/wiki/spec.md) and ADRs 0001–0004. Never weaken them without an ADR.
 
 - Only the posting and reversal database functions write stock movements or set a document to posted or reversed. Clients cannot.
 - Drafts and extraction output never change stock. Extraction output is untrusted.
