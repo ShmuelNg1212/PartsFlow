@@ -12,3 +12,8 @@ supabase/.temp/
 !.env.production.example
 .wrangler/
 .dev.vars*
+
+# Local OCR runtime (plan P1)
+ocr/.venv/
+__pycache__/
+.pytest_cache/

@@ -1,14 +1,13 @@
 # Local PaddleOCR invoice extraction
 
-Date: 2026-10-18. Mode: technical. Status: revised; awaiting approval.
-Feature branch: the provider-cleanup branch during the authorized provider cleanup. Continue local OCR work from this branch after plan approval.
+Date: 2026-10-18. Mode: technical. Status: approved 2026-10-18; executing.
+Feature branch: `feat/local-paddleocr`, based on the provider-cleanup branch.
 Study: [local PaddleOCR](../study/1792316603_local_paddleocr.md).
 Skills: research, codebase-design, and grilling for planning; tdd and Supabase for execution; code-review for rendezvous.
 
 ## OPEN QUESTIONS
 
-1. Approve this revised plan for local PaddleOCR on the Mac, with synthetic invoices only?
-The human approved the provider choice and requested removal of the retired hosted provider. ADR 0005 records this choice. Local implementation still needs approval.
+1. ~~Approve this revised plan for local PaddleOCR on the Mac, with synthetic invoices only?~~ Approved by the human on 2026-10-18. The human did not choose a Python version. The agent used the recommended isolated Python 3.11 environment.
 
 This plan adds a Python worker and a local authenticated bridge. It is larger than changing an extractor setting.
 No cloud OCR account, cloud LLM, paid resource, public tunnel, GitHub push, or production deployment is included.
@@ -40,7 +39,7 @@ No actual hosted OCR call ran. Its setup wizard and provider-specific study were
 
 ## Active task board
 
-- [ ] P1. Prove local PaddleOCR inference. **tests: alongside**.
+- [x] P1. Prove local PaddleOCR inference. **tests: alongside**.
   - Create an isolated Python 3.11 environment. Verify and pin official compatible dependencies. Commit the lockfile. Keep the environment and model cache out of Git.
   - Disable unused formula, seal, and chart modules. Run the Paddle runtime check.
   - Run actual StructureV3 inference on a newly generated invoice. Save raw output outside Git.
@@ -85,6 +84,32 @@ No actual hosted OCR call ran. Its setup wizard and provider-specific study were
   - Document measured layouts and unresolved fields. Do not claim general invoice intelligence or real-shop accuracy.
   - Acceptance: another session can start and verify the same local flow from the docs.
   - Complete when the commands are verified and the docs match the implementation.
+
+## Tactical decisions during execution
+
+- D1. The worker uses the PaddleOCR text pipeline, not PP-StructureV3. The mapper needs only text lines and their boxes. StructureV3 table HTML shifted columns in the smoke test. The text pipeline is about two times faster. Formula, seal, chart, table and layout models are not loaded.
+- D2. Invoice-field mapping is in TypeScript behind the existing Extractor interface. The Python worker returns text lines with boxes only. This reuses the decimal rules, the result types, scoring and Vitest. The study proposed mapping inside the worker; this choice is reversible.
+- D3. Models are pinned by name: PP-OCRv6_medium_det, PP-OCRv6_medium_rec, PP-LCNet_x1_0_doc_ori and PP-LCNet_x1_0_textline_ori.
+
+## P1 evidence
+
+Environment: `ocr/` with `pyproject.toml` and `uv.lock`. Python 3.11.17 (Homebrew), PaddlePaddle 3.3.1, PaddleOCR 3.7.0 with the doc-parser extra, PaddleX 3.7.2. Command: `cd ocr && uv sync`. The virtual environment is ignored by Git.
+Model cache: `PADDLE_PDX_CACHE_HOME=/private/tmp/partsflow-paddlex-cache`. The four pinned models use 146 MB on disk.
+`paddle.utils.run_check()` passed on CPU.
+Measured on this Mac, CPU only, actual inference on the six synthetic cases:
+
+| Case | Pages | Text lines | Seconds |
+|---|---|---|---|
+| readable-pdf | 1 | 33 | 9.5 |
+| phone-photo | 1 | 26 | 6.9 |
+| missing-fields | 1 | 20 | 7.3 |
+| discounts | 1 | 42 | 10.8 |
+| poor-rotated-photo | 1 | 33 | 6.9 |
+| three-page-pdf | 3 | 46 | 21.5 |
+
+Pipeline load with two model downloads: 68.4 s. Load from cache with `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True`: 2.5 s. Peak resident memory for the measuring process: about 4.8 GB.
+Every page of every case returned a result. The readable, discount, three-page and phone-photo text lines are clean. The phone photo is skewed, so rows must be deskewed before grouping. The poor rotated photo is mostly unreadable text in reversed order.
+Raw output is in `/private/tmp/partsflow-paddle-p1`, outside Git.
 
 ## Rendezvous
 
