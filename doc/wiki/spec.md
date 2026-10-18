@@ -190,7 +190,7 @@ Remaining limits:
 - Production public sign-up is disabled. The hosted Auth settings endpoint confirms this setting.
 - The full database suite uses local PostgreSQL and an Auth/Storage shim. It has not run on an isolated real Supabase stack.
 - Real-phone keyboard, safe-area, and touch checks are not done.
-- The app is deployed at `https://partsflow.partsflow.workers.dev`. The live sign-in page and release asset are verified. Production has no shop or owner account yet. Authenticated live checks are pending.
+- The app is deployed at `https://partsflow.partsflow.workers.dev`. The live sign-in page and release asset are verified. Production has one shared, labelled demo shop for testers. Owner and staff sign-in to it is verified against the production backend. Production has no live shop yet. Authenticated live checks of drafts and posting are pending.
 
 See [setup](setup.md), [architecture intent](architecture.md), and [owner testing guide](owner_testing_guide.md).
 The [pilot plan](../plan/1792301569_pilot_app.md) records the final check results.

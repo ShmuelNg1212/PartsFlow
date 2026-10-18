@@ -58,7 +58,8 @@ The third command creates an empty live shop and its first owner. It stores the 
 For production, pass `--env-file=.env.production.local` to Node before the script name.
 The seed still writes a generated owner password to ignored `.env.local`. Treat that file as private.
 Provision each pilot shop separately after the human supplies its name and owner email.
-Production has no shops or users yet. Keep the development demo data separate.
+Production has one shared demo shop for testers (2026-10-18, approved by the human). It is the labelled `is_demo` shop with the synthetic catalog. Its users are `demo-owner@partsflow.test` (owner) and `demo-staff@partsflow.test` (staff). Their passwords are in ignored `.env.production.local`, not `.env.local`. Testers share this shop. They can see and change each other's entries. Production has no live shop yet.
+To reset the demo passwords, change them in `.env.production.local` and run `node --env-file=.env.production.local scripts/seed-demo.mjs` again. The seed does not duplicate data.
 Give this password to the owner through a private channel. Change it in Settings.
 Seeds use PHP and Asia/Manila by default. Settings can change both.
 
