@@ -1,6 +1,6 @@
 # Local PaddleOCR invoice extraction
 
-Date: 2026-10-18. Mode: technical. Status: approved 2026-10-18; executing.
+Date: 2026-10-18. Mode: technical. Status: complete; frozen after rendezvous on 2026-10-18.
 Feature branch: `feat/local-paddleocr`, based on the provider-cleanup branch.
 Study: [local PaddleOCR](../study/1792316603_local_paddleocr.md).
 Skills: research, codebase-design, and grilling for planning; tdd and Supabase for execution; code-review for rendezvous.
@@ -160,6 +160,24 @@ Run `graphify update .` after code changes.
 Exercise the first user upload through actual PaddleOCR. A health endpoint or demo-provider test is not enough.
 Record the checks here. Keep the feature branch separate from production main until the human approves a release. No push is included.
 Freeze this plan only after all tasks and required checks finish.
+
+## Rendezvous record (2026-10-18)
+
+Final checks on `feat/local-paddleocr` after all fixes:
+- Unit tests: 125 passed. Database suite: 133 passed (no SQL changed). Python worker and reader: 13 passed.
+- Typecheck now also covers `scripts/**/*.ts`. Lint, build and Deno check passed. Production builds, with and without `VITE_LOCAL_OCR=true`, contain no `local-ocr` text.
+- Full Playwright regression: 31 passed, 21 skipped (11 viewport-specific checks and 10 opt-in local OCR tests).
+- First user action with actual PaddleOCR: `LOCAL_OCR_E2E=1` passed 6 of 6 on desktop and phone layouts. It covers upload, a corrected description with the raw value kept (R-DOC-4), save and reload, a single posting, a retry with no second movement, Inventory, history, and the Overview recent and low-stock panels. `LOCAL_OCR_E2E=stopped` passed.
+- Measured report rerun after every mapper change: field scores unchanged.
+- The code graph was updated.
+
+Reviews:
+- mattpocock code-review, Standards and Spec. Fixed: the worker's 413 and 503 replies now give true messages; a currency conflict stays empty; the database URL check parses user and host; the unused doc-parser extra was removed; the browser test now corrects a value and checks the Overview. Not changed: the P2 commit also holds the worker, the runner and the report, and history is not rewritten. A bridge timeout leaves the worker busy until its read ends; the next upload says the scanner is busy.
+- Security review. The skill needs `origin/HEAD`, which this repository does not have, so a manual review covered the same scope. No high or medium findings. Fixed: pages above 40 MP are refused before inference, and output above 500 lines or oversized text fails cleanly. Not changed: the audit actor for `apply_extraction` is null, the same as the hosted service-role path.
+- Simplify. Applied: one abort signal, one match per label, the currency read from amount labels, shared parsers and constants, `sha256Hex` reused, the worker locks before it reads the body, and scripts are typechecked. Deferred: real word boxes from PaddleOCR (`return_word_box`) instead of estimated ones, because that needs new fixtures.
+- D1 (text pipeline instead of PP-StructureV3) is a change to the approved architecture. It is raised with the human at hand-off.
+
+Git: the branch has 17 commits above `main` (`fec03c3`), including the earlier provider-cleanup commits. A push does not deploy (no Git integration). The plan keeps this work off `main` until the human approves. No merge, push, deployment or hosted setting change was made.
 
 ## Completion criterion
 
