@@ -5,12 +5,12 @@ Skills: research, codebase-design, grilling, and mem-search.
 
 ## Human direction
 
-The human selected PaddleOCR for document scanning and field extraction. Keep the earlier development-only scope and synthetic test data. Azure account setup is no longer required for this path.
+The human selected PaddleOCR for document scanning and field extraction. Keep the earlier development-only scope and synthetic test data. No cloud OCR account is required for this path.
 
 ## Current foundation
 
 The feature branch is `feat/real-invoice-extraction`, based on the deployed application at `fec03c3`.
-It contains complete evaluation reporting and six new synthetic cases. It also contains isolated Azure input guards. No feature changes were deployed or pushed.
+It contains complete evaluation reporting and six new synthetic cases. It contained input guards for the retired hosted provider. Those were later removed at the human's request. No feature changes were deployed or pushed.
 The last checks passed: 96 unit tests, 133 local database tests, and 10 browser regressions. Two layout-specific browser checks were skipped. These checks did not run actual OCR.
 
 The existing Extractor interface accepts bytes and a MIME type. It returns raw draft fields.
@@ -60,12 +60,11 @@ Official serving supports CPU and loopback HTTP. The exact wrapper will be selec
 
 First prove installation and actual inference on one new synthetic document. Stop and report evidence if that fails.
 Then measure all six synthetic documents. Preserve page coverage, failed reads, missing or extra lines, exact codes, and decimal values in the report.
-Use a provider-neutral report. Its current provider label still names Azure and must change before reporting PaddleOCR results.
+Use a provider-neutral report. Its provider label must reflect the actual reader before reporting PaddleOCR results.
 Synthetic templates establish a narrow supported layout set. They do not establish real-shop accuracy or general document understanding.
 Stock changes still require correction, product selection, and owner confirmation. No accounting or external dashboard integration is added.
 
 ## Intent conflict for approval
 
-The canonical product brief and R-EXT-2 name Azure as the first provider to evaluate. The human now selected PaddleOCR.
-The revised plan must approve a PaddleOCR-first evaluation and record that decision in an ADR. Keep the canonical brief unchanged.
+The human selected PaddleOCR in place of the former hosted provider. A later removal request authorizes removal of that provider's implementation and references. ADR 0005 records this choice. The local integration plan still needs approval.
 Future public hosting, paid compute, real invoices, and additional language models need separate decisions.

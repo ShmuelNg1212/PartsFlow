@@ -4,7 +4,7 @@ import type { ExtractionDone } from './types'
 
 const f = (value: string | null) => ({ value, confidence: 0.9 })
 const result: ExtractionDone = {
-  status: 'done', provider: 'azure', doc_number: f('SI-1'), doc_date: f('2026-03-10'),
+  status: 'done', provider: 'test-provider', doc_number: f('SI-1'), doc_date: f('2026-03-10'),
   vendor_name: f('ACME PARTS'), customer_name: f('Customer'),
   totals: { subtotal: f(null), tax: f(null), total: f('100.00'), currency: 'PHP' },
   lines: [{ description: f('Spark plug'), part_number: f('AB-12'), quantity: f('2'), unit: f('pc'), unit_price: f('50.00'), discount: f(null), amount: f('100.00') }],

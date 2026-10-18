@@ -114,7 +114,7 @@ Enable appropriate row-level security and private file access. Keep server secre
 
 ## Extraction
 
-Create a replaceable extraction interface. Start by evaluating Azure AI Document Intelligence against representative invoices.
+Create a replaceable extraction interface. Evaluate document reading against representative invoices. Use the current provider decision in doc/adr/.
 
 All extraction output is an untrusted draft. It must never post inventory automatically.
 

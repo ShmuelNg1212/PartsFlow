@@ -37,7 +37,7 @@ it('shows all-document accuracy when a successful read has an extra line (R-EXT-
   const field = (value: string | null) => ({ value, confidence: null })
   const line = { description: field(null), part_number: field(null), quantity: field('2'), unit: field(null), unit_price: field(null), discount: field(null), amount: field(null) }
   const result = {
-    status: 'done' as const, provider: 'azure', doc_number: field(null), doc_date: field(null), vendor_name: field(null), customer_name: field('Buyer'),
+    status: 'done' as const, provider: 'test-provider', doc_number: field(null), doc_date: field(null), vendor_name: field(null), customer_name: field('Buyer'),
     totals: { subtotal: field(null), tax: field(null), total: field('100.00'), currency: null }, lines: [line, line],
   }
   const report = evaluateExtractions([
@@ -49,4 +49,5 @@ it('shows all-document accuracy when a successful read has an extra line (R-EXT-
   expect(report.fields['header.counterparty']).toMatchObject({ matched: 1, expected: 1 })
   expect(report.fields['line.quantity']).toMatchObject({ matched: 1, expected: 2 })
   expect(report.markdown).toContain('50.0% (1/2)')
+  expect(report.markdown).toContain('Provider: test-provider.')
 })

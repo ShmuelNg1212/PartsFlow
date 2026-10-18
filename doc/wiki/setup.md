@@ -33,8 +33,8 @@ Use the repository's Supabase CLI configuration when deploying these functions.
 
 Set `APP_ORIGINS` on the Edge Functions to the allowed app origins, separated by commas.
 The development default is `http://localhost:5173`.
-For Azure extraction, set `AZURE_DOCINTEL_ENDPOINT` and `AZURE_DOCINTEL_KEY` as function secrets.
-Without both values, extraction uses labelled synthetic samples only.
+The current source selects the labelled demo extractor. It recognizes synthetic samples only.
+Local PaddleOCR integration is planned separately.
 
 Before real invitations, configure the hosted Auth Site URL, the redirect URL for `/set-password`, SMTP, and `APP_ORIGINS`.
 Turn off public sign-up in the hosted Auth dashboard. Local `config.toml` does not change hosted Auth settings.
@@ -164,40 +164,27 @@ Do not run a forced dependency downgrade as part of host setup.
 
 ## Extraction evaluation
 
-Actual Azure evaluation is not done. The development extraction work is on `feat/real-invoice-extraction`.
-Its local adapter uses free-tier limits: 4,000,000 bytes and two PDF pages.
-It reads JPEG, PNG, and PDF only. Other accepted uploads remain available for manual entry.
-It checks file bytes against the supplied type before sending them. It checks PDF page count with pinned `pdf-lib`.
-The function's `deno.json` pins the same dependency for Edge deployment.
-The adapter rejects unreadable PDFs and multiple detected invoices. It preserves the original file.
-These changes are not deployed to either hosted function yet.
+The source uses a labelled demo extractor. Actual PaddleOCR inference is not connected yet.
+The proposed local integration is in [the active plan](../plan/1792314680_real_invoice_extraction.md).
+It requires an isolated Python runtime, a local worker, and an authenticated development bridge.
+No cloud OCR account or key is required for that proposed path.
 
-Start with a Document Intelligence resource on Free F0. Stop if that tier is unavailable.
-See Microsoft's [resource setup guide](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/create-document-intelligence-resource?view=doc-intel-4.0.0).
-Store `AZURE_DOCINTEL_ENDPOINT` and `AZURE_DOCINTEL_KEY` in ignored `.env.azure.local`.
-Use file mode `0600`. Keep both settings server-side. Do not send the key through chat.
-Configure only the development function before the development test. Production changes need a separate release.
-
-Generate new synthetic test documents outside the checkout:
+Generate new synthetic invoices outside the checkout:
 
 ```sh
 node scripts/make-extraction-cases.mjs /private/tmp/partsflow-extraction-cases
-node --env-file=.env.azure.local scripts/eval-extraction.ts /private/tmp/partsflow-extraction-cases
 ```
 
-The generator uses Playwright Chromium. It does not change the canned demo samples.
+The generator uses Playwright Chromium. It does not alter canned demo fixtures.
 It writes six labelled PDF and photo cases, source HTML, and `truth.json`.
-The evaluation command sends the supplied files to Azure. Use permitted documents only.
-The manifest has `schema_version: 1`, an explicit `synthetic` boolean, and `cases`.
-Each case has `file`, `mime_type`, `direction`, and `truth`.
-Legacy case arrays need `--synthetic` or `--real`.
-The script writes `evaluation.md`, `evaluation.json`, and `extraction-results.json` beside the inputs.
-Failed and omitted reads remain in the denominators. Extra and missing lines are reported.
-Exact product codes stay distinct. Normalized text results are separate.
-Known absent fields are separate from present-field accuracy. Unspecified reference fields are unscored.
-The report states that the adapter does not extract brand or line discounts. Check these manually.
-Synthetic results do not establish real-shop accuracy. Later, use invoices the shop agrees to share.
-Keep invoice inputs, reference answers, and raw evaluation output outside Git.
+No OCR runs in this command. The future local runner must record actual worker results.
+
+The provider-independent scorer and report are in `supabase/functions/_shared/extraction/`.
+The report names the provider from the recorded results. It does not invent a provider when no read exists.
+Failed and omitted reads remain in field denominators. Missing and extra lines are reported.
+Exact product codes stay distinct. Decimal comparisons preserve precision.
+Synthetic results do not establish real-shop accuracy. Later tests need invoices the shop permits us to process.
+Keep invoice files, reference answers, and raw results outside Git.
 
 ## Security advisor record (2026-10-18)
 

@@ -30,9 +30,10 @@ export function evaluateExtractions(cases: EvaluationCase[], reads: EvaluationRe
     }
     return { file: entry.file, mime_type: entry.mime_type, expected_outcome: entry.expected_outcome, status: result ? 'done' : read?.status === 'done' ? 'failed' : read?.status ?? 'omitted', message: read?.message ?? (read?.status === 'done' && !result ? 'Read output was omitted.' : undefined), score }
   })
+  const providers = [...new Set(reads.flatMap((read) => read.result ? [read.result.provider] : []))]
   const markdown = [
     '# Extraction evaluation (measured)', '',
-    `Date: ${options.date}. Provider: Azure prebuilt-invoice. Dataset: ${options.synthetic ? 'Synthetic' : 'Real invoices'}.`,
+    `Date: ${options.date}. Provider: ${providers.map(cell).join(', ') || 'not recorded'}. Dataset: ${options.synthetic ? 'Synthetic' : 'Real invoices'}.`,
     `Documents: ${summary.documents}; read: ${summary.read}; failed/unavailable: ${summary.failed}; omitted: ${summary.omitted}.`,
     `Lines: expected ${summary.expectedLines}; extracted ${summary.extractedLines}; missing ${summary.missingLines}; extra ${summary.extraLines}.`, '',
     '| Field | Present-value match | Expected absent: correctly absent | Unspecified reference values |',
@@ -45,7 +46,7 @@ export function evaluateExtractions(cases: EvaluationCase[], reads: EvaluationRe
     'Null means a known absent reference field. Omitted reference fields are unscored. Correct absences do not increase present-value accuracy. A missing line is not a correctly absent field.',
     'Lines are compared by position. Missing or extra lines can shift later comparisons. Extra lines are counted separately and must be reviewed.',
     'Counterparty means supplier for receipts and customer for sales. Legacy references without direction use supplier.',
-    'The invoice adapter does not extract brand or discount. A printed reference discount counts as a missed value. No brand, discount, product match, or unit conversion is inferred.',
+    'Check brand, discount, product identity, and unit conversion against the original. Field scores do not confirm a product match or authorize a stock movement.',
     options.synthetic ? 'Synthetic results test this dataset only. Real-shop accuracy is unknown.' : 'Results apply only to the supplied reference invoices. No broader accuracy claim is established.',
   ].join('\n')
   return { summary, fields, documents, markdown }

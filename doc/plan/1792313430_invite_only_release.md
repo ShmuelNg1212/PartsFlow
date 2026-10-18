@@ -38,7 +38,7 @@ Production has no owner account. Authenticated live stock access and draft write
 Custom SMTP and invitation delivery are pending. No email was sent.
 The isolated real Supabase database suite and real-phone checks remain pending from the pilot plan.
 Docker is not installed on this machine. The local database tests use the existing shim.
-Azure credentials and extraction evaluation are pending. The deployed extractor has the labelled demo fallback.
+Actual OCR evaluation was pending at release. The deployed extractor uses the labelled demo fallback.
 The security advisor reports the 10 intended authenticated SECURITY DEFINER APIs and access helpers.
 The dependency audit reports seven high entries in the build-time shadcn CLI chain.
 Those tools are not part of the static Worker's runtime. No dependency version was changed for release.

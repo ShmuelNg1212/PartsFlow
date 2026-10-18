@@ -45,7 +45,7 @@ The server validates the caller and file hash before extraction.
 Provider output stays in raw columns. It does not write stock.
 The user confirms the product and physical receipt quantity before posting.
 The demo provider recognizes bundled sample hashes only.
-The Azure provider uses the same interface. Its mapping has fixture tests; real accuracy is unknown.
+The current source function uses the demo provider. A local PaddleOCR adapter is planned behind the same interface. Actual OCR accuracy is unknown.
 
 ## Demo and measurement
 

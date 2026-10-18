@@ -45,16 +45,16 @@ Upload a bundled sample from `public/samples/` to a new receipt.
 Check the **Demo extractor** label and uncertain-field marks.
 Check the original beside the fields on desktop and above them on phone.
 Confirm each product and received quantity. A sample must not post automatically.
-Try an unrelated image without Azure credentials. Manual entry must remain available.
+Try an unrelated image with the demo extractor. Manual entry must remain available.
 
-For the new development Azure test, first complete the setup in [setup](setup.md#extraction-evaluation).
+For the planned local OCR test, first complete the setup in [setup](setup.md#extraction-evaluation). Local inference is not connected yet.
 Use the newly generated files outside the checkout. These are not canned demo results.
-Upload one synthetic PDF or JPEG. Check that the provider is Azure before you call it an actual read.
+Upload one synthetic PDF or JPEG. Check that the provider is the actual local reader before you call it an actual read.
 Compare every field with the original and the reference answers. Correct errors before posting.
 Check the supplier for receipts and the customer for sales. Check brand and discounts by hand.
 Save the draft. Check that stock has not changed. Then select products and received quantities.
 Post once. Check Inventory and Overview. Reopen the document and check its stock movement.
-Try the three-page PDF. Automatic reading must stop and leave manual entry available.
+Try the three-page PDF. Check that every page is read or that the app reports an incomplete read. Manual entry must remain available.
 Repeat with an unsupported photo format and a poor image. Check the explanation and correction path.
 Record failures and missing or extra lines. Synthetic tests do not prove real-shop accuracy.
 
@@ -67,4 +67,4 @@ Emulated phone tests do not prove these hardware behaviors.
 
 In Settings, export **Pilot measurements** as owner.
 Record completion time, corrections, match errors, and whether help was needed.
-Use observed results only. Azure accuracy and real-shop pilot results are not yet measured.
+Use observed results only. Local OCR accuracy and real-shop pilot results are not yet measured.

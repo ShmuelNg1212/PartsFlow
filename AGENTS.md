@@ -100,5 +100,5 @@ Write docs and plans in ASD-STE100: short sentences, one instruction per sentenc
 - Frontend: React, TypeScript, and Vite. React Router for client-side navigation.
 - UI: Tailwind CSS and shadcn/ui.
 - Data: TanStack Query for server data. React Hook Form and Zod for forms and validation.
-- Backend: Supabase PostgreSQL, Auth, and private Storage. Posting and reversal are database functions. Server-side functions do the invoice extraction (first candidate: Azure AI Document Intelligence; a labelled demo extractor without credentials).
+- Backend: Supabase PostgreSQL, Auth, and private Storage. Posting and reversal are database functions. Extraction uses a replaceable interface. Local PaddleOCR evaluation is planned. The current hosted function uses a labelled demo extractor.
 - Before you add or upgrade a dependency, read its current official docs and pick a compatible stable version. Commit the lockfile.

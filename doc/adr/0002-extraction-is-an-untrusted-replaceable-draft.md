@@ -4,7 +4,7 @@ Date: 2026-10-18. Status: accepted. Source: [product brief](../canonical/product
 
 ## Context
 
-OCR output contains errors. The extraction provider is not chosen yet: Azure AI Document Intelligence is the first candidate. Credentials may not exist during development or demos.
+OCR output contains errors. Keep the provider replaceable. A provider may be unavailable during development or demos. See ADR 0005 for the current provider choice.
 
 ## Decision
 

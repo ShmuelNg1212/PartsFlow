@@ -69,11 +69,11 @@ describe('handleExtract', () => {
   })
 
   it('records an extractor crash as failed, still with the hash', async () => {
-    const d = deps({ extractor: extractor(new Error('azure key wrong')), apply: vi.fn(async () => ({ status: 'failed', lines_added: 0 })) })
+    const d = deps({ extractor: extractor(new Error('provider key wrong')), apply: vi.fn(async () => ({ status: 'failed', lines_added: 0 })) })
     const res = await handleExtract(req({ document_id: DOC }), d)
     expect(res.status).toBe(200)
     expect(res.body).toMatchObject({ status: 'failed', lines_added: 0 })
-    expect(JSON.stringify(res.body)).not.toMatch(/azure key/)
+    expect(JSON.stringify(res.body)).not.toMatch(/provider key/)
     expect(d.apply).toHaveBeenCalledWith(DOC, 'f'.repeat(64), expect.objectContaining({ status: 'failed' }))
   })
 

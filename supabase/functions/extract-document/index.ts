@@ -1,8 +1,7 @@
 // Edge Function: extract-document (plan T4.3, ADR 0002, R-EXT-1..4).
 // Deployed with verify_jwt = false: the handler checks the caller's session with Auth.
-// Provider: Azure when AZURE_DOCINTEL_ENDPOINT and AZURE_DOCINTEL_KEY are set; otherwise the labelled demo extractor.
+// Provider: the labelled demo extractor. Local document reading is planned separately.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
-import { azureExtractor } from '../_shared/extraction/azure.ts'
 import { demoExtractor, sha256Hex } from '../_shared/extraction/demo.ts'
 import { handleExtract, type ExtractDeps } from './handler.ts'
 
@@ -11,9 +10,7 @@ const secretKeys = Deno.env.get('SUPABASE_SECRET_KEYS')
 const secretKey = secretKeys ? JSON.parse(secretKeys).default : Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const admin = createClient(url, secretKey, { auth: { persistSession: false, autoRefreshToken: false } })
 
-const azureEndpoint = Deno.env.get('AZURE_DOCINTEL_ENDPOINT')
-const azureKey = Deno.env.get('AZURE_DOCINTEL_KEY')
-const extractor = azureEndpoint && azureKey ? azureExtractor({ endpoint: azureEndpoint, key: azureKey }) : demoExtractor()
+const extractor = demoExtractor()
 
 const allowedOrigins = (Deno.env.get('APP_ORIGINS') ?? 'http://localhost:5173').split(',').map((o) => o.trim()).filter(Boolean)
 

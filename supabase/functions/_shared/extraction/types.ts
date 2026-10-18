@@ -33,25 +33,3 @@ export interface Extractor {
   readonly provider: string
   extract(file: Uint8Array, mime: string): Promise<ExtractionResult>
 }
-
-export const missing = (): Field => ({ value: null, confidence: null })
-
-/**
- * Turns printed numbers such as "₱1,250.50", "1 250.50", "(2)" or "12 pcs" into "1250.50" style text.
- * Returns null when the text is not a plain non-negative decimal after cleaning. Never goes through a float.
- */
-export function normalizeDecimal(text: string | null | undefined): string | null {
-  if (text === null || text === undefined) return null
-  let t = String(text).trim()
-  if (!t) return null
-  t = t.replace(/[^\d.,-]/g, '')
-  if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g, '')
-  else if (/^\d+,\d{1,2}$/.test(t)) t = t.replace(',', '.')
-  return /^\d+(\.\d+)?$/.test(t) ? t : null
-}
-
-/** Formats a provider float without exponent notation, as a last resort when no printed text exists. */
-export function numberToDecimal(n: number | null | undefined): string | null {
-  if (n === null || n === undefined || !Number.isFinite(n) || n < 0) return null
-  return n.toLocaleString('en-US', { useGrouping: false, maximumFractionDigits: 6 })
-}

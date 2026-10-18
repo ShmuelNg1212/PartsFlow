@@ -1,23 +1,22 @@
 # Local PaddleOCR invoice extraction
 
 Date: 2026-10-18. Mode: technical. Status: revised; awaiting approval.
-Feature branch: `feat/real-invoice-extraction`. Current code base: `e46b376`.
+Feature branch: the provider-cleanup branch during the authorized provider cleanup. Continue local OCR work from this branch after plan approval.
 Study: [local PaddleOCR](../study/1792316603_local_paddleocr.md).
-Earlier study: [extraction readiness](../study/1792314641_real_invoice_extraction.md).
 Skills: research, codebase-design, and grilling for planning; tdd and Supabase for execution; code-review for rendezvous.
 
 ## OPEN QUESTIONS
 
 1. Approve this revised plan for local PaddleOCR on the Mac, with synthetic invoices only?
-2. The approval includes a PaddleOCR-first evaluation in place of Azure-first R-EXT-2. Record this choice in an ADR. Keep the canonical product brief unchanged.
+The human approved the provider choice and requested removal of the retired hosted provider. ADR 0005 records this choice. Local implementation still needs approval.
 
 This plan adds a Python worker and a local authenticated bridge. It is larger than changing an extractor setting.
-No Azure account, cloud LLM, paid resource, public tunnel, GitHub push, or production deployment is included.
+No cloud OCR account, cloud LLM, paid resource, public tunnel, GitHub push, or production deployment is included.
 
 ## Human direction
 
 The human approved development-first extraction testing with synthetic invoices. The human selected PaddleOCR on 2026-10-18.
-The earlier Azure plan was approved and partially implemented. This revised architecture still needs approval under the project size gate.
+The earlier hosted-provider plan was approved and partially implemented. This revised architecture still needs approval under the project size gate.
 
 ## Architecture decision proposed for approval
 
@@ -33,11 +32,11 @@ Extraction never posts stock, confirms a product match, or guesses a unit conver
 
 ## Completed foundation
 
-- [x] T1. Azure-specific free-tier input guards. **tests: first**. These stay isolated in the Azure adapter. Do not apply Azure limits to PaddleOCR.
-- [x] T2. Complete evaluation scoring and synthetic case generation. **tests: first** for scoring; **tests: alongside** for generated documents. Reuse this work. Update the report provider label before PaddleOCR evaluation.
+- [x] T1. Remove the retired hosted adapter, its provider-specific tests, fixture, runner, PDF dependency, and setup. **tests: first** for provider-neutral report labels. This cleanup was separately authorized on 2026-10-18.
+- [x] T2. Complete evaluation scoring and synthetic case generation. **tests: first** for scoring; **tests: alongside** for generated documents. Reuse this work. The report now uses the provider in the recorded results.
 
 Six new cases and reference answers are in `/private/tmp/partsflow-extraction-cases`. The generator can recreate them. It does not alter canned demo hashes.
-No actual Azure call ran. The unused Azure setup wizard is no longer a prerequisite.
+No actual hosted OCR call ran. Its setup wizard and provider-specific study were deleted at the human's request.
 
 ## Active task board
 
@@ -54,7 +53,7 @@ No actual Azure call ran. The unused Azure setup wizard is no longer a prerequis
   - Map fields only from explicit evidence. Treat OCR text and table HTML as data. Preserve raw output separately.
   - Handle missing columns, unknown layouts, multiple invoices, corrupt files, and incomplete page results. Do not report a partial document as fully read.
   - Test decimal precision. Keep brand identity and similar part codes distinct. Do not infer product matches.
-  - Make evaluation reports provider-neutral. Verify the provider label and all-document failure denominators before code changes.
+  - Reuse the provider-neutral report. Add a local runner for the actual worker results. Verify all-document failure denominators.
   - Run all six synthetic cases with actual OCR. Report exact fields, failures, missing and extra lines, and manual correction needs.
   - Acceptance: field values have source evidence. Unknown fields remain null or clearly unresolved. The report states the supported synthetic layouts and limits.
   - Complete when the mapper tests pass and a measured PaddleOCR report is saved. Real-shop accuracy remains unknown.
@@ -80,7 +79,7 @@ No actual Azure call ran. The unused Azure setup wizard is no longer a prerequis
   - Complete when measured browser evidence and correction results are recorded. Mocked provider output cannot satisfy this task.
 
 - [ ] P5. Record the provider choice and operating limits. **tests: alongside**.
-  - Add an ADR for the approved PaddleOCR-first evaluation. Update R-EXT-2 and implementation status after approval. Keep canonical files unchanged.
+  - Use ADR 0005 and R-EXT-2 for the approved provider choice. Update implementation status after the local reader is verified.
   - Sync setup, architecture intent, and owner testing instructions. Include install, start, stop, model downloads, and troubleshooting.
   - State that OCR runs locally while the development app still uses hosted Supabase. The Mac must be running for this local scanner.
   - Document measured layouts and unresolved fields. Do not claim general invoice intelligence or real-shop accuracy.
@@ -113,3 +112,16 @@ Simplify and security-review are not installed. Earlier manual review covered pr
 
 The revised PaddleOCR work has not started. No Python packages or models were installed during study. No hosted settings changed.
 Untracked Finder `.DS_Store` files remain outside this change.
+
+### Authorized provider cleanup
+
+On 2026-10-18, the human requested deletion of the retired provider's implementation and references. This is one cleanup commit. It does not approve P1 through P5.
+Removed its adapter, fixture, provider-specific tests, network evaluation runner, PDF dependency, Deno dependency configuration, setup wizard, and provider-specific study.
+Removed its references in current files, including prior records, at the human's explicit request. ADR 0005 records the current choice. Git history was not rewritten.
+Kept generic scoring and synthetic cases. Reports name the actual recorded provider. The multi-page synthetic case now tests complete reading without a provider-specific page cap.
+The source extraction function uses only the labelled demo provider. No hosted function or production setting changed.
+Verification passed: 74 unit tests and six authenticated browser workflow tests. Two layout-specific browser checks were skipped. TypeScript, lint, build, and the Deno function check passed. The report-provider regression failed before the fix and passed after it.
+A scan found no retired-provider references in tracked working files. The old local setup files and task-created implementation worktrees were removed. The code graph was updated.
+Standards review found no remaining rule violation. The explicit removal request authorizes the targeted changes to earlier records. Spec review confirmed removal of the provider, its setup, dependencies, and stale limits while retaining manual entry and generic evaluation. Simplify and security-review are not installed. Manual review confirmed that access checks and draft-only writes are unchanged.
+The cleanup stays on its feature branch because earlier local extraction work has not been approved to ship. No main merge, push, or deployment was made.
+The local PaddleOCR plan remains awaiting approval.

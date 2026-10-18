@@ -55,7 +55,7 @@ const cases = [
   { id: 'poor-rotated-photo', file: 'poor-rotated-photo.jpg', mime_type: 'image/jpeg', direction: 'receipt', photo: 'poor',
     truth: invoice('SYN-EVAL-105', [line('Wheel bearing', 'LAB-WB-008', '2', '625.40'), line('Hub seal', 'LAB-HS-009', '2', '73.85')]) },
   { id: 'three-page-pdf', file: 'three-page-invoice.pdf', mime_type: 'application/pdf', direction: 'receipt', pages: 3,
-    expected_outcome: 'reject_page_limit', truth: invoice('SYN-EVAL-106', [line('Test axle bushing', 'LAB-AB-010', '1', '210.00')]) },
+    expected_outcome: 'extract', truth: invoice('SYN-EVAL-106', [line('Test axle bushing', 'LAB-AB-010', '1', '210.00')]) },
 ]
 function sheet(inv, pageNumber = 1, pages = 1) {
   const field = (label, value) => value === null ? '' : `<div>${label}: <strong>${esc(value)}</strong></div>`
@@ -63,7 +63,7 @@ function sheet(inv, pageNumber = 1, pages = 1) {
     <p class="notice">Invented data. Not a real business or tax document. Do not enter into live stock.</p>
     <h1>${esc(inv.vendor_name)}</h1><div class="meta">${field('Invoice number', inv.doc_number)}${field('Invoice date', inv.doc_date)}${field('Customer', inv.customer_name)}<div>Currency: ${esc(inv.currency)}</div></div>
     ${pageNumber === 1 ? `<table><thead><tr><th>Description</th><th>Part number</th><th>Qty</th><th>Unit</th><th>Unit price</th><th>Discount*</th><th>Amount</th></tr></thead><tbody>${inv.lines.map((item) => `<tr>${['description', 'part_number', 'quantity', 'unit', 'unit_price', 'discount', 'amount'].map((key) => `<td>${item[key] === null ? '' : esc(item[key]).replaceAll('\n', '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table>
-    <p class="small">* Discount is a line total in PHP. Amount is after the line discount.</p><div class="totals">${field('Subtotal PHP', inv.subtotal)}${field('Tax PHP (12%)', inv.tax)}${field('TOTAL PHP', inv.total)}</div>` : `<p>Continuation page ${pageNumber}. No additional invoice lines or amounts.</p><p>This three-page document tests the configured free-tier page limit.</p>`}
+    <p class="small">* Discount is a line total in PHP. Amount is after the line discount.</p><div class="totals">${field('Subtotal PHP', inv.subtotal)}${field('Tax PHP (12%)', inv.tax)}${field('TOTAL PHP', inv.total)}</div>` : `<p>Continuation page ${pageNumber}. No additional invoice lines or amounts.</p><p>This three-page document tests complete page coverage.</p>`}
     <footer>SYNTHETIC EVALUATION ONLY · Page ${pageNumber} of ${pages}</footer></section>`
 }
 function html(testCase) {

@@ -317,7 +317,7 @@ max_frequency = "5s"
 # enroll_enabled = true
 # verify_enabled = true
 
-# Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
+# Use an external OAuth provider. The full list of providers are: `apple`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
 [auth.external.apple]
@@ -327,7 +327,7 @@ client_id = ""
 secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
 # Overrides the default auth callback URL derived from auth.external_url.
 redirect_uri = ""
-# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant identity providers,
 # or any other third-party OIDC providers.
 url = ""
 # If enabled, the nonce check will be skipped. Required for local sign in with Google auth.
