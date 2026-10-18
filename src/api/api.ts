@@ -146,7 +146,7 @@ export async function listDocuments(shopId: string, filter: DocumentFilter, limi
 }
 
 const LINE_COLUMNS =
-  'id, line_no, description, part_number, quantity::text, unit, unit_price::text, discount::text, received_quantity::text, conversion_factor::text, product_id, match_source, raw, product:products(id, sku, description, brand, base_unit, part_number)'
+  'id, line_no, description, part_number, quantity::text, unit, unit_price::text, discount::text, received_quantity::text, conversion_factor::text, product_id, match_source, suggested_product_id, raw, product:products!document_lines_product_id_shop_id_fkey(id, sku, description, brand, base_unit, part_number)'
 
 export async function getDocument(id: string): Promise<DocumentDetail | null> {
   const row = check(
@@ -189,7 +189,7 @@ export type DraftHeader = {
 
 export type DraftLine = Pick<
   DocumentLine,
-  'description' | 'part_number' | 'quantity' | 'unit' | 'unit_price' | 'discount' | 'received_quantity' | 'conversion_factor' | 'product_id' | 'match_source'
+  'description' | 'part_number' | 'quantity' | 'unit' | 'unit_price' | 'discount' | 'received_quantity' | 'conversion_factor' | 'product_id' | 'match_source' | 'suggested_product_id'
 > & { id: string | null }
 
 export async function saveDraft(
@@ -207,6 +207,11 @@ export async function saveDraft(
     }),
   )
   return result as unknown as { updated_at: string; line_ids: string[] }
+}
+
+/** T6.1: the first open of a draft starts the pilot timer. The server keeps only the first one. */
+export async function recordDocumentOpened(id: string): Promise<void> {
+  check(await supabase.rpc('record_document_opened', { p_document_id: id }))
 }
 
 export type PostResult = { document_id: string; status: 'posted'; posted_at: string; already_posted: boolean; same_request: boolean }

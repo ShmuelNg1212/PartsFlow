@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { exportDocuments, exportMovements, exportProducts } from '@/features/export/exports'
+import { exportDocumentMetrics, exportDocuments, exportMovements, exportProducts } from '@/features/export/exports'
 import { downloadText } from '@/lib/download'
 import { errorMessage } from '@/lib/errors'
 import { formatDateTime } from '@/lib/format'
@@ -230,14 +230,16 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
 }
 
 const EXPORTS = [
-  { id: 'products', label: 'Products and stock on hand', run: exportProducts },
-  { id: 'movements', label: 'Stock movements (ledger)', run: exportMovements },
-  { id: 'documents', label: 'Documents', run: exportDocuments },
+  { id: 'products', label: 'Products and stock on hand', run: exportProducts, ownerOnly: false },
+  { id: 'movements', label: 'Stock movements (ledger)', run: exportMovements, ownerOnly: false },
+  { id: 'documents', label: 'Documents', run: exportDocuments, ownerOnly: false },
+  // T6.1: raw pilot counts per posted document. The server refuses non-owners.
+  { id: 'pilot-measurements', label: 'Pilot measurements', run: exportDocumentMetrics, ownerOnly: true },
 ] as const
 
 /** R-ACT-1: basic CSV export. Quantities and money are exact decimals. */
 function ExportSection() {
-  const { shop } = useShop()
+  const { shop, isOwner } = useShop()
   const exporter = useMutation({
     mutationFn: async (id: (typeof EXPORTS)[number]['id']) => {
       const item = EXPORTS.find((e) => e.id === id)!
@@ -251,7 +253,7 @@ function ExportSection() {
       <h2 className="mb-1 text-lg font-medium">Export</h2>
       <p className="mb-3 text-sm text-muted-foreground">CSV files for a spreadsheet or your accountant. Times are in UTC.</p>
       <div className="flex flex-wrap gap-2">
-        {EXPORTS.map((e) => (
+        {EXPORTS.filter((e) => isOwner || !e.ownerOnly).map((e) => (
           <Button key={e.id} variant="outline" disabled={exporter.isPending} onClick={() => exporter.mutate(e.id)}>
             <DownloadSimpleIcon /> {exporter.isPending && exporter.variables === e.id ? 'Preparing…' : e.label}
           </Button>

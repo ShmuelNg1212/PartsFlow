@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { Link, useBlocker, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
-import { deleteDraft, getDocument, getProduct, keys, listDocumentMovements, postDocument, saveDraft } from '@/api/api'
+import { deleteDraft, getDocument, getProduct, keys, listDocumentMovements, postDocument, recordDocumentOpened, saveDraft } from '@/api/api'
 import type { DocumentDetail, LineProduct } from '@/api/types'
 import { PageHeader } from '@/components/app/PageHeader'
 import { EmptyState, ErrorState, LoadingState } from '@/components/app/states'
@@ -79,6 +79,11 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
     setBase({ state: next, updatedAt: doc.updated_at })
     setState(next)
   }
+
+  // T6.1: pilot timer. Measurement must never block the draft, so a failure is ignored.
+  useEffect(() => {
+    recordDocumentOpened(doc.id).catch(() => undefined)
+  }, [doc.id])
 
   // Keep an unsaved copy on this device.
   useEffect(() => {

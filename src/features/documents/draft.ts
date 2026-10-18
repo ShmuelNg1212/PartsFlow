@@ -18,6 +18,8 @@ export type EditableLine = {
   conversion_factor: string
   product_id: string | null
   match_source: string | null
+  // T6.1: the top suggestion when the product was picked. Measurement only.
+  suggested_product_id: string | null
   product: LineProduct | null
   raw: Record<string, RawField> | null
 }
@@ -43,6 +45,7 @@ export function emptyLine(): EditableLine {
     conversion_factor: '',
     product_id: null,
     match_source: null,
+    suggested_product_id: null,
     product: null,
     raw: null,
   }
@@ -78,6 +81,7 @@ export function fromDocument(doc: DocumentDetail): DraftState {
       conversion_factor: trimDecimal(l.conversion_factor),
       product_id: l.product_id,
       match_source: l.match_source,
+      suggested_product_id: l.suggested_product_id,
       product: l.product,
       raw: l.raw,
     })),
@@ -119,6 +123,7 @@ export function toSavePayload(state: DraftState): { header: DraftHeader; lines: 
         conversion_factor: t(l.conversion_factor) || null,
         product_id: l.product_id,
         match_source: l.match_source,
+        suggested_product_id: l.suggested_product_id,
       })),
   }
 }

@@ -61,7 +61,19 @@ export function LinesEditor({ direction, lines, onChange, counterpartyId, showIs
     onChange([...lines, line])
   }
   const onPick = (key: string, pick: Pick) =>
-    update(key, { product: pick.product, product_id: pick.product.id, match_source: pick.source === 'manual' ? 'manual' : pick.source })
+    onChange(
+      lines.map((l) =>
+        l.key === key
+          ? {
+              ...l,
+              product: pick.product,
+              product_id: pick.product.id,
+              match_source: pick.source,
+              suggested_product_id: pick.suggestedId ?? l.suggested_product_id,
+            }
+          : l,
+      ),
+    )
 
   // Keyboard entry: Enter on the last line adds a new line.
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>, key: string) => {

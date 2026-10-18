@@ -12,7 +12,8 @@ import { formatQty } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import { useShop } from '@/shop/ShopProvider'
 
-export type Pick = { product: LineProduct; source: 'alias' | 'part_number' | 'description' | 'manual' }
+// suggestedId: the top suggestion shown for the line, kept to measure match changes (T6.1).
+export type Pick = { product: LineProduct; source: 'alias' | 'part_number' | 'description' | 'manual'; suggestedId: string | null }
 
 const sourceText: Record<Suggestion['source'], string> = {
   alias: 'Matched before for this supplier',
@@ -59,8 +60,8 @@ export function ProductPicker({ value, counterpartyId, description, partNumber, 
     placeholderData: keepPreviousData,
   })
 
-  const pick = (p: Pick) => {
-    onPick(p)
+  const pick = (p: Omit<Pick, 'suggestedId'>) => {
+    onPick({ ...p, suggestedId: suggestions.data?.[0]?.product_id ?? null })
     setOpen(false)
     setText('')
   }

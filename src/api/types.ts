@@ -48,6 +48,7 @@ export type DocumentLine = {
   conversion_factor: string | null
   product_id: string | null
   match_source: string | null
+  suggested_product_id: string | null
   raw: Record<string, RawField> | null
   product: LineProduct | null
 }

@@ -156,3 +156,48 @@ export async function exportDocuments(shopId: string): Promise<string> {
   ]
   return toCsv(columns, rows)
 }
+
+type MetricsRow = {
+  document_id: string
+  direction: string
+  doc_number: string | null
+  status: string
+  posted_at: string
+  demo_shop: boolean
+  extraction_provider: string | null
+  extraction_status: string | null
+  open_to_post_seconds: number | null
+  lines: number
+  extracted_lines: number
+  lines_from_extraction: number
+  compared_fields: number
+  corrected_fields: number
+  suggested_lines: number
+  match_changes: number
+}
+
+/** T6.1: pilot measurements, one row per posted document. Raw counts only; no computed rates (spec "Pilot measurement"). */
+export async function exportDocumentMetrics(shopId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('document_metrics', { p_shop_id: shopId })
+  if (error) throw error
+  const rows = (data ?? []) as MetricsRow[]
+  const columns: Column<MetricsRow>[] = [
+    { key: 'document_id', header: 'document_id', kind: 'text' },
+    { key: 'direction', header: 'direction', kind: 'text' },
+    { key: 'doc_number', header: 'doc_number', kind: 'text' },
+    { key: 'status', header: 'status', kind: 'text' },
+    { key: 'posted_at', header: 'posted_at_utc', kind: 'text' },
+    { key: 'demo_shop', header: 'demo_shop', kind: 'text' },
+    { key: 'extraction_provider', header: 'extraction_provider', kind: 'text' },
+    { key: 'extraction_status', header: 'extraction_status', kind: 'text' },
+    { key: 'open_to_post_seconds', header: 'open_to_post_seconds', kind: 'decimal' },
+    { key: 'lines', header: 'lines', kind: 'decimal' },
+    { key: 'extracted_lines', header: 'extracted_lines', kind: 'decimal' },
+    { key: 'lines_from_extraction', header: 'lines_from_extraction', kind: 'decimal' },
+    { key: 'compared_fields', header: 'compared_fields', kind: 'decimal' },
+    { key: 'corrected_fields', header: 'corrected_fields', kind: 'decimal' },
+    { key: 'suggested_lines', header: 'suggested_lines', kind: 'decimal' },
+    { key: 'match_changes', header: 'match_changes', kind: 'decimal' },
+  ]
+  return toCsv(columns, rows)
+}

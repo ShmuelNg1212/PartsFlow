@@ -110,6 +110,7 @@ export type Database = {
           raw: Json | null
           received_quantity: number | null
           shop_id: string
+          suggested_product_id: string | null
           unit: string | null
           unit_price: number | null
           updated_at: string
@@ -129,6 +130,7 @@ export type Database = {
           raw?: Json | null
           received_quantity?: number | null
           shop_id: string
+          suggested_product_id?: string | null
           unit?: string | null
           unit_price?: number | null
           updated_at?: string
@@ -148,6 +150,7 @@ export type Database = {
           raw?: Json | null
           received_quantity?: number | null
           shop_id?: string
+          suggested_product_id?: string | null
           unit?: string | null
           unit_price?: number | null
           updated_at?: string
@@ -627,6 +630,27 @@ export type Database = {
       }
     }
     Functions: {
+      document_metrics: {
+        Args: { p_shop_id: string }
+        Returns: {
+          compared_fields: number
+          corrected_fields: number
+          demo_shop: boolean
+          direction: string
+          doc_number: string
+          document_id: string
+          extracted_lines: number
+          extraction_provider: string
+          extraction_status: string
+          lines: number
+          lines_from_extraction: number
+          match_changes: number
+          open_to_post_seconds: number
+          posted_at: string
+          status: string
+          suggested_lines: number
+        }[]
+      }
       _audit: {
         Args: {
           p_data?: Json
@@ -684,6 +708,10 @@ export type Database = {
           p_lines: Json
         }
         Returns: Json
+      }
+      record_document_opened: {
+        Args: { p_document_id: string }
+        Returns: undefined
       }
       recorded_sales: {
         Args: { p_day: string; p_shop_id: string }
