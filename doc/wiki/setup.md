@@ -9,6 +9,9 @@ Run `npm run dev`. Open `http://localhost:5173`.
 
 The hosted development project is `urljzpqigvtoooitwjrd`.
 Keep real shop data out of this project. Browser tests add data to the E2E test shop.
+The production project is `piijtyewolwrnfimmhnf` (`partsflow-production`, Singapore, Free plan).
+Its connection settings are in ignored `.env.production.local`.
+Run production database commands with `node --env-file=.env.production.local`.
 
 ## Database and functions
 
@@ -23,7 +26,7 @@ node scripts/apply-migration.mjs supabase/migrations/<file>.sql
 The script uses one transaction per file. It records the filename in the migration table.
 Do not edit a migration that is already applied.
 
-The hosted development project has the current migrations and both Edge Functions.
+Both hosted projects have the current 12 migrations and both Edge Functions.
 The functions are `invite-member` and `extract-document`.
 Both use `verify_jwt = false` in CLI configuration. Each function validates the caller with Auth before it uses server privileges.
 Use the repository's Supabase CLI configuration when deploying these functions.
@@ -35,7 +38,10 @@ Without both values, extraction uses labelled synthetic samples only.
 
 Before real invitations, configure the hosted Auth Site URL, the redirect URL for `/set-password`, SMTP, and `APP_ORIGINS`.
 Turn off public sign-up in the hosted Auth dashboard. Local `config.toml` does not change hosted Auth settings.
-Email delivery has not been verified.
+Production Auth uses `https://partsflow.partsflow.workers.dev` as its Site URL.
+The exact `/set-password` URL is allowed. `APP_ORIGINS` has the same production origin.
+The production Auth settings endpoint confirms that public sign-up is disabled.
+Custom SMTP is not configured. Email delivery has not been verified.
 
 ## Seed
 
@@ -49,6 +55,10 @@ The first command creates test owner and staff accounts.
 The second command creates the separate demo shop and about 40 synthetic products.
 Both commands store generated account credentials in ignored `.env.local`.
 The third command creates an empty live shop and its first owner. It stores the generated password as `LIVE_OWNER_PASSWORD`.
+For production, pass `--env-file=.env.production.local` to Node before the script name.
+The seed still writes a generated owner password to ignored `.env.local`. Treat that file as private.
+Provision each pilot shop separately after the human supplies its name and owner email.
+Production has no shops or users yet. Keep the development demo data separate.
 Give this password to the owner through a private channel. Change it in Settings.
 Seeds use PHP and Asia/Manila by default. Settings can change both.
 
@@ -81,7 +91,8 @@ Real-device keyboard, safe-area, and touch checks are still required.
 ## Build, deployment, and rollback
 
 Cloudflare Workers Static Assets is the selected frontend host (human decision, 2026-10-18).
-Supabase remains the backend. The Cloudflare account, production URL, and domain are not configured yet.
+Supabase remains the backend. The live app is `https://partsflow.partsflow.workers.dev`.
+Wrangler is authenticated. No custom domain or Git deployment integration is configured.
 The Worker name in `wrangler.jsonc` is `partsflow`. Change it if the account already uses that name.
 Wrangler is pinned in the lockfile. Use the local npm commands below.
 
@@ -143,9 +154,13 @@ and [rollback](https://developers.cloudflare.com/workers/versions-and-deployment
 
 Preparation check (2026-10-18): 83 unit tests pass. Local Cloudflare navigation and missing-asset checks pass.
 Wrangler dry run, build, TypeScript, and lint pass. A staff user signed in, saved a draft, and reloaded its deep link through the local Cloudflare server. These browser checks used the development test shop.
-The production build correctly stops when its explicit values are missing. Real production configuration and live deployment are not verified.
+The first production release is recorded in [the release record](../plan/1792313430_invite_only_release.md).
+The live sign-in page and release asset are verified. Live routes and missing-file checks pass.
+Production sign-in, stock access, and draft writes need a first owner account.
 The npm audit lists seven existing high-severity entries in the shadcn CLI dependency chain; none are in Wrangler.
-Do not run a forced dependency downgrade as part of host setup. Review that chain before a production release.
+The first release audit confirms these entries are in the build-time shadcn CLI chain.
+The static Worker has no npm runtime dependencies. Keep the dependency findings open for maintenance.
+Do not run a forced dependency downgrade as part of host setup.
 
 ## Extraction evaluation
 

@@ -181,11 +181,11 @@ The Azure adapter and evaluation script exist. Azure evaluation is not done.
 Owner exports include raw pilot measurements. No real-shop pilot result has been measured.
 
 Remaining limits:
-- Real invitation email delivery needs hosted Auth URLs, SMTP, and allowed app origins.
-- Hosted public sign-up must be disabled in the dashboard. Local configuration does not prove this setting.
+- Production Auth URLs and allowed app origins are configured. Real invitation email delivery still needs SMTP and a delivery check.
+- Production public sign-up is disabled. The hosted Auth settings endpoint confirms this setting.
 - The full database suite uses local PostgreSQL and an Auth/Storage shim. It has not run on an isolated real Supabase stack.
 - Real-phone keyboard, safe-area, and touch checks are not done.
-- Cloudflare Workers Static Assets is selected. Local host checks pass. Account, production origin, and live deployment are not configured.
+- The app is deployed at `https://partsflow.partsflow.workers.dev`. The live sign-in page and release asset are verified. Production has no shop or owner account yet. Authenticated live checks are pending.
 
 See [setup](setup.md), [architecture intent](architecture.md), and [owner testing guide](owner_testing_guide.md).
 The [pilot plan](../plan/1792301569_pilot_app.md) records the final check results.
