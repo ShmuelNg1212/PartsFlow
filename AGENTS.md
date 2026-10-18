@@ -95,7 +95,7 @@ Write docs and plans in ASD-STE100: short sentences, one instruction per sentenc
 ## Project facts
 
 - Product: PartsFlow, a pilot web app that cuts manual invoice and stock entry for small auto supply shops. One shop, one stock location, roles owner and staff.
-- Code status: no application code in this repository yet (2026-10-18).
+- Code status: pilot application implemented locally (2026-10-18). See `doc/wiki/spec.md` Implementation status for checks and remaining limits.
 - Test command: `npm test` (Vitest) and `npx playwright test` (Playwright). Every check in spec.md "Required checks" is an automated test. Confirm the scripts in `package.json` once it exists.
 - Frontend: React, TypeScript, and Vite. React Router for client-side navigation.
 - UI: Tailwind CSS and shadcn/ui.

@@ -2,7 +2,7 @@
 
 Source of intent: [doc/canonical/product_brief.md](../canonical/product_brief.md). Terms: [GLOSSARY.md](../../GLOSSARY.md).
 
-**Status (2026-10-18):** This repository has no application code yet. Each rule below is target behaviour. When code implements a rule, the sync docs stage records it in "Implementation status". Changes to a rule go to a plan's OPEN QUESTIONS first, then an ADR.
+**Status (2026-10-18):** The pilot application is implemented locally. See "Implementation status" for checks and remaining limits. Changes to intent go to a plan's OPEN QUESTIONS first, then an ADR.
 
 ## Purpose
 
@@ -165,4 +165,27 @@ Measure: invoice completion time, corrections required, product-matching errors,
 
 ## Implementation status
 
-Nothing is implemented in this repository yet.
+The application has sign-in, owner and staff roles, shop selection, Overview, Invoices, Inventory, History, and Settings.
+Manual receipt and sale entry, save and restore, post, duplicate review, reversal, CSV import and export, private uploads, and extraction review are implemented.
+Database tests cover the stock rules, RLS, concurrent posting, concurrent sales, raw extraction separation, and measurement events.
+Hosted browser tests cover the manual flow on desktop and phone, upload and demo extraction, signed file access, and Realtime refresh.
+The design uses Geist, Geist Mono, Newsreader titles, Phosphor icons, and muted state colors.
+Phone layouts include stacked line cards, large controls, and safe-area spacing.
+Line discounts can be entered and corrected on both layouts.
+Account changes clear cached data. Detail reads use the active shop.
+Concurrent duplicate copies need an override. Line edits serialize with posting.
+
+The separate demo shop has synthetic products and three sample invoices.
+The demo extractor reads only those sample hashes. It is labelled.
+The Azure adapter and evaluation script exist. Azure evaluation is not done.
+Owner exports include raw pilot measurements. No real-shop pilot result has been measured.
+
+Remaining limits:
+- Real invitation email delivery needs hosted Auth URLs, SMTP, and allowed app origins.
+- Hosted public sign-up must be disabled in the dashboard. Local configuration does not prove this setting.
+- The full database suite uses local PostgreSQL and an Auth/Storage shim. It has not run on an isolated real Supabase stack.
+- Real-phone keyboard, safe-area, and touch checks are not done.
+- No production host is selected. No production release is verified.
+
+See [setup](setup.md), [architecture intent](architecture.md), and [owner testing guide](owner_testing_guide.md).
+The [pilot plan](../plan/1792301569_pilot_app.md) records the final check results.
