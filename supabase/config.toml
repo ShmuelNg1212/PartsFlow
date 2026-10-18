@@ -417,3 +417,7 @@ enabled = true
 [functions.invite-member]
 # The function verifies the caller's session itself (see supabase/functions/invite-member/index.ts).
 verify_jwt = false
+
+[functions.extract-document]
+# The function verifies the caller's session itself (see supabase/functions/extract-document/index.ts).
+verify_jwt = false
