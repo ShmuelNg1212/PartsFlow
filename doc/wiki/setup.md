@@ -33,8 +33,8 @@ Use the repository's Supabase CLI configuration when deploying these functions.
 
 Set `APP_ORIGINS` on the Edge Functions to the allowed app origins, separated by commas.
 The development default is `http://localhost:5173`.
-The current source selects the labelled demo extractor. It recognizes synthetic samples only.
-Local PaddleOCR integration is planned separately.
+The hosted `extract-document` function uses the labelled demo extractor. It recognizes synthetic samples only.
+Local PaddleOCR runs only in local development. See [Local OCR](#local-ocr-development-only).
 
 Before real invitations, configure the hosted Auth Site URL, the redirect URL for `/set-password`, SMTP, and `APP_ORIGINS`.
 Turn off public sign-up in the hosted Auth dashboard. Local `config.toml` does not change hosted Auth settings.
@@ -162,12 +162,37 @@ The first release audit confirms these entries are in the build-time shadcn CLI 
 The static Worker has no npm runtime dependencies. Keep the dependency findings open for maintenance.
 Do not run a forced dependency downgrade as part of host setup.
 
-## Extraction evaluation
+## Local OCR (development only)
 
-The source uses a labelled demo extractor. Actual PaddleOCR inference is not connected yet.
-The proposed local integration is in [the active plan](../plan/1792314680_real_invoice_extraction.md).
-It requires an isolated Python runtime, a local worker, and an authenticated development bridge.
-No cloud OCR account or key is required for that proposed path.
+PaddleOCR runs on this Mac. The app still uses the hosted development Supabase project. The Mac must run three processes:
+
+| Process | Address | Command |
+|---|---|---|
+| OCR worker | 127.0.0.1:8765 | `cd ocr && OCR_WORKER_TOKEN=$T PADDLE_PDX_CACHE_HOME=/private/tmp/partsflow-paddlex-cache uv run python worker.py` |
+| Bridge | 127.0.0.1:8766 | `OCR_WORKER_TOKEN=$T node scripts/ocr-bridge.ts` |
+| App | localhost:5173 | `VITE_LOCAL_OCR=true npm run dev` |
+
+1. Install once: `cd ocr && uv sync`. This uses Python 3.11 and `ocr/uv.lock`.
+2. Make a token for this session: `export T=$(openssl rand -hex 24)`. Give the same token to the worker and the bridge.
+3. Start the worker. The first start downloads about 146 MB of models into the cache and takes about 70 s. A cached start takes about 3 s.
+4. Start the bridge. It reads `.env.local`. It refuses to start unless every Supabase value names the development project `urljzpqigvtoooitwjrd`.
+5. Start the app with `VITE_LOCAL_OCR=true`. Without the flag, the app uses the hosted demo extractor.
+6. Check readiness: `curl -s 127.0.0.1:8766/health` returns `{"bridge":true,"scanner":true}`.
+
+Stop each process with Ctrl+C. The worker uses about 5 GB of memory while it runs. One page takes about 7 to 11 s on CPU.
+The worker reads one document at a time. Limits: 10 MB and 5 pages (`OCR_MAX_BYTES`, `OCR_MAX_PAGES`). The bridge waits 120 s for a read.
+
+Troubleshooting:
+- The draft says "The local scanner is not running": the worker or the bridge is down. Start both, wait until `/health` shows `"scanner":true`, then upload again.
+- The bridge exits at start: a `.env.local` value names another project, or the token is shorter than 32 characters.
+- The bridge has no Supabase secret key. It uses the user's session for Storage and `SUPABASE_DB_URL` for `apply_extraction`.
+- No lines on a photo: more than a quarter of its text was read with low confidence. Enter the lines by hand.
+
+What the mapper reads, and its limits, are in `supabase/functions/_shared/extraction/paddle.ts`. Measured results: [synthetic evaluation](../study/1792320512_paddleocr_synthetic_eval.md).
+
+Browser check: with the three processes running, run `LOCAL_OCR_E2E=1 npx playwright test e2e/local-ocr.spec.ts`. Stop the worker and run `LOCAL_OCR_E2E=stopped` for the failure path. Restart the app without the flag before the normal suite, because the normal suite expects the demo extractor.
+
+## Extraction evaluation
 
 Generate new synthetic invoices outside the checkout:
 
@@ -177,7 +202,7 @@ node scripts/make-extraction-cases.mjs /private/tmp/partsflow-extraction-cases
 
 The generator uses Playwright Chromium. It does not alter canned demo fixtures.
 It writes six labelled PDF and photo cases, source HTML, and `truth.json`.
-No OCR runs in this command. The future local runner must record actual worker results.
+No OCR runs in this command. With the worker running, `OCR_WORKER_TOKEN=$T node scripts/eval-local-ocr.ts` reads every case and the bundled demo samples, and writes the report to `/private/tmp/partsflow-paddle-eval.md`.
 
 The provider-independent scorer and report are in `supabase/functions/_shared/extraction/`.
 The report names the provider from the recorded results. It does not invent a provider when no read exists.

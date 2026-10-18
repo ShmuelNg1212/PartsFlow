@@ -45,7 +45,10 @@ The server validates the caller and file hash before extraction.
 Provider output stays in raw columns. It does not write stock.
 The user confirms the product and physical receipt quantity before posting.
 The demo provider recognizes bundled sample hashes only.
-The current source function uses the demo provider. A local PaddleOCR adapter is planned behind the same interface. Actual OCR accuracy is unknown.
+The hosted function uses the demo provider. Local PaddleOCR is a development path behind the same interface (ADR 0005).
+The local path keeps the hosted trust boundary: the bridge runs the same `handleExtract` checks and the same `apply_extraction` write. The Python worker holds no Supabase credential. It only turns bytes into text lines with boxes.
+Field mapping is in TypeScript, so it shares the result types, decimal rules and tests with the rest of extraction. It takes values only from explicit evidence: labels, a header row, and row arithmetic. A value it cannot support stays empty for the owner. This favours fewer automatic values over wrong ones.
+Production builds contain no local OCR path. Real-shop accuracy is unknown.
 
 ## Demo and measurement
 

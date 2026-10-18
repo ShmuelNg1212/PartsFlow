@@ -169,6 +169,7 @@ The application has sign-in, owner and staff roles, shop selection, Overview, In
 Manual receipt and sale entry, save and restore, post, duplicate review, reversal, CSV import and export, private uploads, and extraction review are implemented.
 Database tests cover the stock rules, RLS, concurrent posting, concurrent sales, raw extraction separation, and measurement events.
 Hosted browser tests cover the manual flow on desktop and phone, upload and demo extraction, signed file access, and Realtime refresh.
+An opt-in browser suite covers local PaddleOCR upload, correction, single posting, poor photos, multi-page files and a stopped worker.
 The design uses Geist, Geist Mono, Newsreader titles, Phosphor icons, and muted state colors.
 Phone layouts include stacked line cards, large controls, and safe-area spacing.
 Line discounts can be entered and corrected on both layouts.
@@ -179,8 +180,9 @@ The separate demo shop has synthetic products and three sample invoices.
 The demo extractor reads only those sample hashes. It is labelled.
 The retired hosted OCR adapter and its setup have been removed from the source.
 Provider-independent evaluation scoring and six new synthetic invoice cases remain.
-The source function uses the labelled demo extractor. Local PaddleOCR integration is planned.
-Actual local OCR and real-shop accuracy remain unverified.
+The hosted function uses the labelled demo extractor. Local PaddleOCR works in local development through an authenticated bridge (ADR 0005).
+On synthetic invoices it read all 9 documents. Part numbers, quantities, units and prices matched on every line it extracted. A poor rotated photo gives no lines by design. See the [synthetic evaluation](../study/1792320512_paddleocr_synthetic_eval.md).
+Real-shop accuracy is unverified. A real phone camera is untested.
 Owner exports include raw pilot measurements. No real-shop pilot result has been measured.
 
 Remaining limits:

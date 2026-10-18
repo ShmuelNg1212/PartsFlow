@@ -78,7 +78,7 @@ No actual hosted OCR call ran. Its setup wizard and provider-specific study were
   - Acceptance: actual local OCR supplies reviewable values. The expected stock and dashboard changes follow owner confirmation only.
   - Complete when measured browser evidence and correction results are recorded. Mocked provider output cannot satisfy this task.
 
-- [ ] P5. Record the provider choice and operating limits. **tests: alongside**.
+- [x] P5. Record the provider choice and operating limits. **tests: alongside**.
   - Use ADR 0005 and R-EXT-2 for the approved provider choice. Update implementation status after the local reader is verified.
   - Sync setup, architecture intent, and owner testing instructions. Include install, start, stop, model downloads, and troubleshooting.
   - State that OCR runs locally while the development app still uses hosted Supabase. The Mac must be running for this local scanner.
@@ -144,6 +144,11 @@ Passed on desktop and phone layouts against hosted development, with actual Padd
 Passed on desktop: poor rotated photo gives document number only and manual entry works; three-page PDF gives exactly one line; with the worker stopped, the draft says the scanner is not running and manual entry works.
 Not covered in the browser: an unsupported file type (the file picker filters it; the worker refuses it with 422 in `test_worker.py`). The Overview page was not asserted. No real phone was available, so the real camera was not tested.
 Two test-only fixes: the app shows `125.5` for the stored value 125.50, so the test compares the value; the product-picker helper counts unpicked lines, so line 2 is picked first.
+
+## P5 evidence
+
+Synced `doc/wiki/setup.md` (Local OCR section: install, start, stop, models, limits, troubleshooting, browser check), `architecture.md` (trust boundary and evidence-only mapping), `owner_testing_guide.md`, spec implementation status, ADR 0005 status note, and the AGENTS.md backend fact.
+The documented commands were run as written in a fresh shell: `uv sync`, worker, bridge, `VITE_LOCAL_OCR=true npm run dev`, `/health` returned scanner true, and the phone-photo browser test passed.
 
 ## Rendezvous
 
