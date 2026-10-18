@@ -43,7 +43,7 @@ export function AttachDocument({ documentId, blocked, onDone }: { documentId: st
         </label>
       </div>
       {attach.isError && (
-        <p role="alert" className="mt-2 rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
+        <p role="alert" className="motion-enter mt-2 rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
           {errorMessage(attach.error)}
         </p>
       )}

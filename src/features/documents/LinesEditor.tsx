@@ -1,5 +1,5 @@
 import { PlusIcon, TrashIcon } from '@phosphor-icons/react'
-import { useEffect, useRef, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { Direction } from '@/api/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +41,8 @@ function RawHint({ line, field }: { line: EditableLine; field: string }) {
 export function LinesEditor({ direction, lines, onChange, counterpartyId, showIssues, onCreateProduct }: Props) {
   const focusKey = useRef<string | null>(null)
   const root = useRef<HTMLDivElement>(null)
+  // Only lines added here fade in; lines loaded with the document appear at once.
+  const [added, setAdded] = useState<ReadonlySet<string>>(() => new Set())
 
   useEffect(() => {
     if (!focusKey.current) return
@@ -58,6 +60,7 @@ export function LinesEditor({ direction, lines, onChange, counterpartyId, showIs
   const add = () => {
     const line = emptyLine()
     focusKey.current = line.key
+    setAdded((keys) => new Set(keys).add(line.key))
     onChange([...lines, line])
   }
   const onPick = (key: string, pick: Pick) =>
@@ -126,7 +129,7 @@ export function LinesEditor({ direction, lines, onChange, counterpartyId, showIs
             {lines.map((l, i) => {
               const issues = showIssues ? lineIssues(l, direction) : []
               return (
-                <tr key={l.key} className={cn('border-b border-border align-top last:border-0', issues.length > 0 && 'bg-yellow-bg/40')}>
+                <tr key={l.key} className={cn('border-b border-border align-top last:border-0', issues.length > 0 && 'bg-yellow-bg/40', added.has(l.key) && 'motion-fade')}>
                   <td className="num px-2 py-2.5 text-muted-foreground">{i + 1}</td>
                   <td className="px-2 py-1.5">{input(l, 'description', { label: 'description' })}</td>
                   <td className="px-2 py-1.5">{input(l, 'part_number', { label: 'part number', mono: true })}</td>
@@ -175,7 +178,7 @@ export function LinesEditor({ direction, lines, onChange, counterpartyId, showIs
         {lines.map((l, i) => {
           const issues = showIssues ? lineIssues(l, direction) : []
           return (
-            <li key={l.key} className={cn('rounded-lg border border-border bg-card p-3', issues.length > 0 && 'border-yellow-fg/40 bg-yellow-bg/30')}>
+            <li key={l.key} className={cn('rounded-lg border border-border bg-card p-3', issues.length > 0 && 'border-yellow-fg/40 bg-yellow-bg/30', added.has(l.key) && 'motion-fade')}>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium">Line {i + 1}</span>
                 <Button type="button" variant="ghost" size="sm" aria-label={`Remove line ${i + 1}`} onClick={() => remove(l.key)} className="min-h-11 text-muted-foreground">

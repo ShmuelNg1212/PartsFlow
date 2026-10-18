@@ -33,7 +33,7 @@ export function ReverseDialog({ open, onOpenChange, documentId, onDone }: { open
           <Textarea id="reverse-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="For example: wrong quantity entered on line 2." />
         </div>
         {mutation.isError && (
-          <p role="alert" className="rounded-md bg-red-bg px-3 py-2 text-sm break-words text-red-fg">
+          <p role="alert" className="motion-enter rounded-md bg-red-bg px-3 py-2 text-sm break-words text-red-fg">
             {errorMessage(mutation.error)}
           </p>
         )}

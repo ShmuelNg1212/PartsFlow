@@ -53,7 +53,7 @@ export function SignInPage() {
             {form.formState.errors.password && <p className="text-sm text-red-fg">{form.formState.errors.password.message}</p>}
           </div>
           {serverError && (
-            <p role="alert" className="rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
+            <p role="alert" className="motion-enter rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
               {serverError}
             </p>
           )}

@@ -210,7 +210,7 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
       />
 
       {restore && (
-        <div role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-blue-fg/20 bg-blue-bg px-4 py-3 text-sm text-blue-fg">
+        <div role="status" className="motion-enter mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-blue-fg/20 bg-blue-bg px-4 py-3 text-sm text-blue-fg">
           <span className="flex-1">Unsaved changes from {formatDateTime(restore.savedAt, shop.timezone)} are on this device.</span>
           <Button
             size="sm"
@@ -236,7 +236,7 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
       )}
 
       {conflict && (
-        <div role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-red-fg/20 bg-red-bg px-4 py-3 text-sm text-red-fg">
+        <div role="alert" className="motion-enter mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-red-fg/20 bg-red-bg px-4 py-3 text-sm text-red-fg">
           <span className="flex-1">Someone else saved this draft after you opened it. Your changes are kept on this device. Reload to see their version, then restore yours if needed.</span>
           <Button
             size="sm"

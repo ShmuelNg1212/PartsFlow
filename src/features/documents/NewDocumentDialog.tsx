@@ -88,7 +88,7 @@ export function NewDocumentDialog({ open, onOpenChange }: { open: boolean; onOpe
                   key={direction}
                   type="button"
                   onClick={() => setStep({ kind: 'source', direction })}
-                  className="flex min-h-16 items-start gap-3 rounded-lg border border-border bg-card p-4 text-left hover:bg-accent active:scale-[0.99]"
+                  className="flex min-h-16 items-start gap-3 rounded-lg border border-border bg-card p-4 text-left hover:bg-accent transition-transform duration-150 ease-out active:scale-[0.99]"
                 >
                   <Icon className="mt-0.5 size-5 shrink-0" />
                   <span>
@@ -102,7 +102,7 @@ export function NewDocumentDialog({ open, onOpenChange }: { open: boolean; onOpe
         )}
 
         {step.kind === 'source' && (
-          <>
+          <div className="motion-enter-x grid gap-4">
             <DialogHeader>
               <DialogTitle>{directionLabel[step.direction]}</DialogTitle>
               <DialogDescription>Add the paper document, or type the lines yourself. The original file is kept unchanged.</DialogDescription>
@@ -154,23 +154,23 @@ export function NewDocumentDialog({ open, onOpenChange }: { open: boolean; onOpe
                 Back
               </Button>
             </div>
-          </>
+          </div>
         )}
 
         {step.kind === 'working' && (
-          <>
+          <div className="motion-enter-x grid gap-4">
             <DialogHeader>
               <DialogTitle>Please wait</DialogTitle>
               <DialogDescription aria-live="polite">{step.label}</DialogDescription>
             </DialogHeader>
             <div className="h-1 w-full overflow-hidden rounded bg-secondary">
-              <div className="h-full w-1/3 animate-pulse rounded bg-foreground/60" />
+              <div className="motion-progress h-full w-1/3 rounded bg-foreground/60" />
             </div>
-          </>
+          </div>
         )}
 
         {error && (
-          <p role="alert" className="rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
+          <p role="alert" className="motion-enter rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
             {error}
           </p>
         )}

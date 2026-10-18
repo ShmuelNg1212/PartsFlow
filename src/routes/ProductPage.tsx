@@ -140,7 +140,7 @@ function OpeningDialog({ open, onOpenChange, productId, unit }: { open: boolean;
           {qty && !valid && <p className="text-sm text-red-fg">Enter a number, zero or more, with at most 3 decimals.</p>}
         </form>
         {mutation.isError && (
-          <p role="alert" className="rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
+          <p role="alert" className="motion-enter rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
             {errorMessage(mutation.error)}
           </p>
         )}

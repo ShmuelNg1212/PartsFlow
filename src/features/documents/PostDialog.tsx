@@ -101,7 +101,7 @@ export function PostDialog({ open, onOpenChange, direction, lines, onPost, onChe
         )}
 
         {phase.kind === 'error' && !duplicate && (
-          <div role="alert" className="rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
+          <div role="alert" className="motion-enter rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
             <p className="font-medium">Not posted.</p>
             <p className="break-words">{phase.error.message}</p>
             {phase.error.kind === 'insufficient_stock' && phase.error.items.length > 1 && (
@@ -117,7 +117,7 @@ export function PostDialog({ open, onOpenChange, direction, lines, onPost, onChe
         )}
 
         {duplicate && (
-          <div role="alert" className="space-y-2 rounded-md bg-yellow-bg px-3 py-2 text-sm text-yellow-fg">
+          <div role="alert" className="motion-enter space-y-2 rounded-md bg-yellow-bg px-3 py-2 text-sm text-yellow-fg">
             <p className="font-medium">Possible duplicate. Not posted.</p>
             <ul className="list-disc pl-5">
               {duplicate.items.map((d) => (
@@ -137,7 +137,7 @@ export function PostDialog({ open, onOpenChange, direction, lines, onPost, onChe
         )}
 
         {phase.kind === 'unknown' && (
-          <div role="alert" className="rounded-md bg-yellow-bg px-3 py-2 text-sm text-yellow-fg">
+          <div role="alert" className="motion-enter rounded-md bg-yellow-bg px-3 py-2 text-sm text-yellow-fg">
             <p className="font-medium">Result unknown.</p>
             <p>The connection dropped while posting. PartsFlow is checking the status. You can retry safely: the same request posts only once.</p>
           </div>

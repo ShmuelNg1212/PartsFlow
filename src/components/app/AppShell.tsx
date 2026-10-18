@@ -7,7 +7,7 @@ import {
   TrayIcon,
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
-import { NavLink, Outlet } from 'react-router'
+import { NavLink, Outlet, useLocation } from 'react-router'
 import { useSession } from '@/auth/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -55,6 +55,7 @@ function ShopSwitcher() {
 export function AppShell() {
   const session = useSession()
   const { shop } = useShop()
+  const { pathname } = useLocation()
   return (
     <div className="min-h-dvh">
       <ConnectionBanner />
@@ -119,7 +120,10 @@ export function AppShell() {
         </header>
 
         <main className="min-w-0 flex-1 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-10 lg:px-8">
-          <Outlet />
+          {/* Keyed on the path only: filter and search changes do not replay the entrance. */}
+          <div key={pathname} className="motion-page">
+            <Outlet />
+          </div>
         </main>
       </div>
 
@@ -135,7 +139,7 @@ export function AppShell() {
             end={end}
             className={({ isActive }) =>
               cn(
-                'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground select-none',
+                'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground select-none [&>svg]:transition-transform [&>svg]:duration-100 [&>svg]:ease-out active:[&>svg]:scale-[0.92]',
                 isActive && 'font-medium text-foreground',
               )
             }

@@ -27,7 +27,7 @@ export function EmptyState({ title, children, action }: { title: string; childre
 export function ErrorState({ error, onRetry, title = 'Could not load this' }: { error: unknown; onRetry?: () => void; title?: string }) {
   const appError = toAppError(error)
   return (
-    <div role="alert" className="rounded-lg border border-red-fg/20 bg-red-bg px-4 py-4 text-red-fg">
+    <div role="alert" className="motion-enter rounded-lg border border-red-fg/20 bg-red-bg px-4 py-4 text-red-fg">
       <div className="flex items-start gap-3">
         <WarningCircleIcon className="mt-0.5 size-5 shrink-0" />
         <div className="min-w-0 flex-1">

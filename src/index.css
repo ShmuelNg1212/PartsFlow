@@ -100,6 +100,10 @@
     --yellow-bg: #FBF3DB; --yellow-fg: #956400;
     --green-bg: #EDF3EC;  --green-fg: #346538;
     --blue-bg: #E1F3FE;   --blue-fg: #1F6C9F;
+
+    /* Motion: short state feedback only. See doc/wiki/architecture.md "Motion". */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @layer base {
@@ -124,6 +128,8 @@
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    /* Progress must still read as "working": a slow fade, no movement. */
+    .motion-progress { animation: progress-pulse 2s ease-in-out infinite !important; }
   }
 }
 /* Phone platform rules apply to every screen, including portalled controls. */
@@ -151,7 +157,37 @@ button, [role="button"] {
   animation: none;
 }
 [data-slot="dialog-content"], [data-slot="dialog-overlay"] {
-  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-timing-function: var(--ease-out);
+}
+/* Entrances play once on mount; leaving is instant so the next action never waits. */
+.motion-enter {
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+.motion-enter-x {
+  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
+}
+.motion-page {
+  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
+}
+.motion-fade {
+  transition: opacity 150ms ease-out;
+}
+@starting-style {
+  .motion-enter { opacity: 0; transform: translateY(-4px); }
+  .motion-enter-x { opacity: 0; transform: translateX(6px); }
+  .motion-page { opacity: 0; transform: translateY(4px); }
+  .motion-fade { opacity: 0; }
+}
+/* Indeterminate progress: a short bar crosses the track while work runs. */
+@keyframes progress-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+.motion-progress {
+  animation: progress-slide 1.2s var(--ease-in-out) infinite;
+}
+@keyframes progress-pulse {
+  50% { opacity: 0.4; }
 }
 @media (max-width: 767px), (pointer: coarse) {
   :is(input:not([type="radio"]):not([type="checkbox"]):not([type="file"]), textarea, select) {

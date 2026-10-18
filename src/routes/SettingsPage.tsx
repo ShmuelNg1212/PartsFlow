@@ -109,7 +109,7 @@ function ShopForm() {
         </div>
       </div>
       {save.isError && (
-        <p role="alert" className="rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
+        <p role="alert" className="motion-enter rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
           {errorMessage(save.error)}
         </p>
       )}
@@ -212,7 +212,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
           </fieldset>
         </form>
         {invite.isError && (
-          <p role="alert" className="rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
+          <p role="alert" className="motion-enter rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
             {errorMessage(invite.error)}
           </p>
         )}
@@ -260,7 +260,7 @@ function ExportSection() {
         ))}
       </div>
       {exporter.isError && (
-        <p role="alert" className="mt-2 rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
+        <p role="alert" className="motion-enter mt-2 rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
           {errorMessage(exporter.error)}
         </p>
       )}
