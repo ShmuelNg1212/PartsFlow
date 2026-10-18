@@ -5,8 +5,8 @@ description = "Local PaddleOCR worker for PartsFlow development. Synthetic invoi
 requires-python = "==3.11.*"
 dependencies = [
   "paddlepaddle==3.3.1",
-  "paddleocr[doc-parser]==3.7.0",
-  "paddlex==3.7.2",
+  "paddleocr==3.7.0",
+  "paddlex[ocr]==3.7.2",
 ]
 
 [dependency-groups]

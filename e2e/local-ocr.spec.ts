@@ -29,7 +29,8 @@ test.describe('local PaddleOCR', () => {
     const { sb, shopId } = await apiAs('owner')
     const skus = [uniqueSku('OCR'), uniqueSku('OCR')]
     const products = await sb.from('products')
-      .insert(skus.map((sku, i) => ({ shop_id: shopId, sku, part_number: `PN ${sku}`, description: `OCR ${i ? 'air' : 'oil'} filter ${sku}`, brand: 'Fictional' })))
+      // Product 1 has a reorder threshold of 5, so the receipt of 3 shows it under Low stock on the Overview.
+      .insert(skus.map((sku, i) => ({ shop_id: shopId, sku, part_number: `PN ${sku}`, description: `OCR ${i ? 'air' : 'oil'} filter ${sku}`, brand: 'Fictional', reorder_threshold: i ? 0 : 5 })))
       .select('id, sku')
     expect(products.error).toBeNull()
     const ids = skus.map((sku) => products.data!.find((p) => p.sku === sku)!.id)
@@ -52,10 +53,10 @@ test.describe('local PaddleOCR', () => {
     await expect(visible(page.getByLabel('Line 2 part number'))).toHaveValue('LAB-AF-002')
     // R-POST-3: received quantity is never pre-filled.
     await expect(visible(page.getByLabel('Line 1 received quantity'))).toHaveValue('')
-    // The supplier had no label, so it is marked as not found (R-DOC-5).
     expect(await stock()).toEqual(['0', '0'])
 
-    // The owner corrects and confirms.
+    // The owner corrects an OCR value and confirms.
+    await visible(page.getByLabel('Line 1 description')).fill('Oil filter, model A (checked)')
     await visible(page.getByLabel('Line 1 received quantity')).fill('3')
     await visible(page.getByLabel('Line 2 received quantity')).fill('2')
     // pickProduct counts unpicked lines, so pick the later line first.
@@ -65,6 +66,7 @@ test.describe('local PaddleOCR', () => {
     await expect(page.getByText('All changes saved')).toBeVisible()
     await page.reload()
     await expect(visible(page.getByLabel('Line 2 received quantity'))).toHaveValue('2')
+    await expect(visible(page.getByLabel('Line 1 description'))).toHaveValue('Oil filter, model A (checked)')
     await expect(page.getByText('Read automatically (paddleocr-local).')).toBeVisible()
     expect(await stock(), 'a saved draft does not change stock').toEqual(['0', '0'])
 
@@ -99,6 +101,17 @@ test.describe('local PaddleOCR', () => {
     await expect(visible(page.getByRole('link', { name: /^Receipt/ }))).toBeVisible()
     await page.goto('/history')
     await expect(page.getByText('SYN-EVAL-101').filter({ visible: true }).first()).toBeVisible()
+
+    // Overview: the posted receipt is recent, and product 1 is now low.
+    await page.goto('/')
+    await expect(page.locator(`a[href="/inbox/${docId}"]`).filter({ visible: true })).toHaveCount(1)
+    await expect(page.locator(`a[href="/inventory/${ids[0]}"]`).filter({ visible: true })).toHaveCount(1)
+    await expect(page.locator(`a[href="/inventory/${ids[1]}"]`)).toHaveCount(0)
+
+    // R-DOC-4: the correction did not overwrite the raw extracted value.
+    const raw = await sb.from('document_lines').select('description, raw').eq('document_id', docId).eq('line_no', 1).single()
+    expect(raw.data!.description).toBe('Oil filter, model A (checked)')
+    expect((raw.data!.raw as { description: { value: string } }).description.value).toBe('Oil filter, model A')
   })
 
   test('a phone photo is read through the same path', async ({ page }) => {

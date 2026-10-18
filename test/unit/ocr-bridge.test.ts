@@ -22,6 +22,7 @@ describe('checkDevConfig', () => {
     ['a production URL', { VITE_SUPABASE_URL: 'https://piijtyewolwrnfimmhnf.supabase.co' }],
     ['a production project ref', { SUPABASE_PROJECT_REF: 'piijtyewolwrnfimmhnf' }],
     ['a database URL for another project', { SUPABASE_DB_URL: 'postgresql://postgres.piijtyewolwrnfimmhnf:pw@host:5432/postgres' }],
+    ['a database URL that only mentions the ref in its password', { SUPABASE_DB_URL: `postgresql://postgres.piijtyewolwrnfimmhnf:${DEV_PROJECT_REF}@host:5432/postgres` }],
     ['a missing worker token', { OCR_WORKER_TOKEN: '' }],
     ['a short worker token', { OCR_WORKER_TOKEN: 'short' }],
     ['a non-loopback worker URL', { OCR_WORKER_URL: 'http://10.0.0.5:8765' }],

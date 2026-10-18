@@ -16,7 +16,9 @@ export function checkDevConfig(env: Record<string, string | undefined>): BridgeC
   const workerToken = env.OCR_WORKER_TOKEN ?? ''
   if (env.SUPABASE_PROJECT_REF !== DEV_PROJECT_REF) throw new Error(`The local bridge runs only against the development project ${DEV_PROJECT_REF}.`)
   if (supabaseUrl !== `https://${DEV_PROJECT_REF}.supabase.co`) throw new Error('VITE_SUPABASE_URL is not the development project.')
-  if (!dbUrl.includes(DEV_PROJECT_REF)) throw new Error('SUPABASE_DB_URL is not the development project.')
+  // The pooler user is postgres.<ref>; a direct connection uses host db.<ref>.supabase.co.
+  const db = dbUrl.match(/^postgres(?:ql)?:\/\/([^:]+):.*@([^@/:]+)(?::\d+)?\/[^?]+(?:\?.*)?$/)
+  if (!db || !(db[1] === `postgres.${DEV_PROJECT_REF}` || db[2] === `db.${DEV_PROJECT_REF}.supabase.co`)) throw new Error('SUPABASE_DB_URL is not the development project.')
   if (!env.VITE_SUPABASE_PUBLISHABLE_KEY) throw new Error('VITE_SUPABASE_PUBLISHABLE_KEY is not set.')
   if (workerToken.length < 32) throw new Error('OCR_WORKER_TOKEN must have at least 32 characters.')
   if (!/^http:\/\/(127\.0\.0\.1|localhost|\[::1\]):\d+$/.test(workerUrl)) throw new Error('OCR_WORKER_URL must be a loopback address.')

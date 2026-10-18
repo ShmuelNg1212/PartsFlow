@@ -11,11 +11,15 @@ export type OcrDocument = { page_count: number; pages: OcrPage[] }
 
 /** The worker understood the file and refused it (unsupported, too large, incomplete). */
 export class OcrRejected extends Error {}
+/** The worker is running but cannot read now (busy, still starting). */
+export class OcrBusy extends Error {}
 
 const PROVIDER = 'paddleocr-local'
 const LABEL_MIN_SCORE = 0.9
 const UNVERIFIED_CAP = 0.5
 const MAX_SLOPE = 0.18 // about 10 degrees
+const POOR_LINE_SCORE = 0.8
+const POOR_PAGE_SHARE = 0.25
 
 export function localPaddleExtractor(deps: { read(file: Uint8Array, mime: string): Promise<OcrDocument> }): Extractor {
   return {
@@ -26,6 +30,7 @@ export function localPaddleExtractor(deps: { read(file: Uint8Array, mime: string
         doc = await deps.read(file, mime)
       } catch (err) {
         if (err instanceof OcrRejected) return { status: 'failed', provider: PROVIDER, message: err.message }
+        if (err instanceof OcrBusy) return { status: 'not_available', provider: PROVIDER, message: `${err.message} Or enter the lines by hand.` }
         return { status: 'not_available', provider: PROVIDER, message: 'The local scanner is not running. Enter the lines by hand.' }
       }
       return mapOcrDocument(doc)
@@ -49,7 +54,9 @@ export function workerReader({ url, token, timeoutMs, fetch: doFetch = fetch }: 
         timeout,
       ])
       const body = await Promise.race([res.json().catch(() => null), timeout])
-      if (res.status === 422) throw new OcrRejected(typeof body?.error === 'string' ? body.error : 'The file could not be read.')
+      const message = typeof body?.error === 'string' ? body.error : null
+      if (res.status === 422 || res.status === 413) throw new OcrRejected(message ?? 'The file could not be read.')
+      if (res.status === 503) throw new OcrBusy(message ?? 'The scanner is busy. Try again shortly.')
       if (!res.ok) throw new Error(`OCR worker answered ${res.status}`)
       if (!isOcrDocument(body)) throw new Error('OCR worker answer is malformed')
       return body
@@ -90,10 +97,16 @@ export function mapOcrDocument(doc: OcrDocument): ExtractionResult {
     // Only a labelled supplier counts. An unlabelled heading is not evidence of who issued the invoice.
     vendor_name: headers.vendor ?? field(null),
     customer_name: headers.customer ?? field(null),
-    totals: checkTotals(headers.subtotal ?? field(null), headers.tax ?? field(null), headers.total ?? field(null), headers.currency?.value ?? headers.totalCurrency?.value ?? null),
+    totals: checkTotals(headers.subtotal ?? field(null), headers.tax ?? field(null), headers.total ?? field(null), currency(headers)),
     lines,
   }
   return result
+}
+
+/** A currency code from "Currency:" or a totals label. Two different codes leave it empty. */
+function currency(labels: Labels): string | null {
+  const codes = [labels.currency?.value, labels.totalCurrency?.value].filter((c): c is string => !!c)
+  return new Set(codes).size === 1 ? codes[0]! : null
 }
 
 // ---------- values ----------
@@ -209,10 +222,10 @@ const NUMERIC: Column[] = ['quantity', 'unit_price', 'discount', 'amount']
 const headerColumn = (text: string): Column | undefined =>
   HEADER_WORDS[text.toLowerCase().replace(/[^a-z# ]/g, '').replace(/\s+/g, ' ').trim()]
 
-/** A photo with many low-confidence lines is not used for table lines or guesses. */
+/** A photo with many low-confidence lines is not used for table lines. */
 function isPoor(page: OcrPage): boolean {
   if (page.lines.length === 0) return false
-  return page.lines.filter((l) => l.score < 0.8).length / page.lines.length > 0.25
+  return page.lines.filter((l) => l.score < POOR_LINE_SCORE).length / page.lines.length > POOR_PAGE_SHARE
 }
 
 const cx = (l: OcrLine) => (l.box[0] + l.box[2]) / 2

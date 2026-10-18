@@ -171,6 +171,11 @@ describe('localPaddleExtractor safety rules', () => {
     expect(result.doc_date.value).toBeNull()
   })
 
+  it('leaves the currency empty when two labels disagree', async () => {
+    const result = done(await extract({ page_count: 1, pages: [page([line('Currency: USD', [57, 100, 300, 120]), line('TOTAL PHP: 10.00', [800, 900, 1100, 920])])] }))
+    expect(result.totals.currency).toBeNull()
+  })
+
   it('drops totals that do not add up', async () => {
     const result = done(await extract({
       page_count: 1,
@@ -233,8 +238,20 @@ describe('workerReader', () => {
     await expect(read(new Uint8Array([1]), 'application/pdf')).rejects.toEqual(new OcrRejected('Read 1 of 3 pages.'))
   })
 
-  it('treats a busy, failed or slow worker as unavailable, not as a rejection', async () => {
-    for (const fetch of [respond(503, { error: 'busy' }), respond(500, {}), () => new Promise<Response>(() => {})]) {
+  it('turns a too-large refusal into a rejection, not "not running"', async () => {
+    const read = workerReader({ url: 'http://127.0.0.1:1', token: 's', timeoutMs: 1000, fetch: respond(413, { error: 'The file is empty or too large.' }) })
+    await expect(read(new Uint8Array([1]), 'application/pdf')).rejects.toEqual(new OcrRejected('The file is empty or too large.'))
+  })
+
+  it('passes a busy or starting worker message through as unavailable', async () => {
+    const result = await localPaddleExtractor({
+      read: workerReader({ url: 'http://127.0.0.1:1', token: 's', timeoutMs: 1000, fetch: respond(503, { error: 'The scanner is busy. Try again shortly.' }) }),
+    }).extract(new Uint8Array([1]), 'application/pdf')
+    expect(result).toEqual({ status: 'not_available', provider: 'paddleocr-local', message: 'The scanner is busy. Try again shortly. Or enter the lines by hand.' })
+  })
+
+  it('treats a failed or slow worker as unavailable, not as a rejection', async () => {
+    for (const fetch of [respond(500, {}), () => new Promise<Response>(() => {})]) {
       const read = workerReader({ url: 'http://127.0.0.1:1', token: 's', timeoutMs: 20, fetch })
       const err = await read(new Uint8Array([1]), 'application/pdf').catch((e: unknown) => e)
       expect(err).toBeInstanceOf(Error)
