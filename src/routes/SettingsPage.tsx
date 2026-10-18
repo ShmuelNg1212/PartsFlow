@@ -1,4 +1,4 @@
-import { UserPlusIcon } from '@phosphor-icons/react'
+import { DownloadSimpleIcon, UserPlusIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { exportDocuments, exportMovements, exportProducts } from '@/features/export/exports'
+import { downloadText } from '@/lib/download'
 import { errorMessage } from '@/lib/errors'
 import { formatDateTime } from '@/lib/format'
 import { useShop } from '@/shop/ShopProvider'
@@ -24,6 +26,7 @@ export function SettingsPage() {
       <PageHeader title="Settings" description={isOwner ? 'Shop details and members.' : 'Shop details and members. Only an owner can change them.'} />
       {isOwner ? <ShopForm key={shop.id + shop.name + shop.currency + shop.timezone} /> : <ShopFacts />}
       <Members />
+      <ExportSection />
       <section>
         <h2 className="mb-2 text-lg font-medium">Your account</h2>
         <Link to="/set-password" className="text-sm underline underline-offset-4">
@@ -223,5 +226,42 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+const EXPORTS = [
+  { id: 'products', label: 'Products and stock on hand', run: exportProducts },
+  { id: 'movements', label: 'Stock movements (ledger)', run: exportMovements },
+  { id: 'documents', label: 'Documents', run: exportDocuments },
+] as const
+
+/** R-ACT-1: basic CSV export. Quantities and money are exact decimals. */
+function ExportSection() {
+  const { shop } = useShop()
+  const exporter = useMutation({
+    mutationFn: async (id: (typeof EXPORTS)[number]['id']) => {
+      const item = EXPORTS.find((e) => e.id === id)!
+      const csv = await item.run(shop.id)
+      const date = new Intl.DateTimeFormat('en-CA', { timeZone: shop.timezone }).format(new Date())
+      downloadText(`partsflow-${id}-${date}.csv`, csv)
+    },
+  })
+  return (
+    <section>
+      <h2 className="mb-1 text-lg font-medium">Export</h2>
+      <p className="mb-3 text-sm text-muted-foreground">CSV files for a spreadsheet or your accountant. Times are in UTC.</p>
+      <div className="flex flex-wrap gap-2">
+        {EXPORTS.map((e) => (
+          <Button key={e.id} variant="outline" disabled={exporter.isPending} onClick={() => exporter.mutate(e.id)}>
+            <DownloadSimpleIcon /> {exporter.isPending && exporter.variables === e.id ? 'Preparing…' : e.label}
+          </Button>
+        ))}
+      </div>
+      {exporter.isError && (
+        <p role="alert" className="mt-2 rounded-md bg-red-bg px-3 py-2 text-sm text-red-fg">
+          {errorMessage(exporter.error)}
+        </p>
+      )}
+    </section>
   )
 }

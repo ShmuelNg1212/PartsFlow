@@ -5,7 +5,7 @@ import { parseProductCsv } from './productCsv'
 
 describe('parseProductCsv', () => {
   it('maps common header names and fills defaults', () => {
-    const csv = '﻿SKU,Part No.,Description,Brand,Unit,Price,Reorder point,Location,Qty\nSP-1,BKR6E-11,Spark plug,NGK,pc,"1,250.50",4,A-1,12\nOF-2,W 712/75,Oil filter,Mann-Filter,,,,,\n'
+    const csv = '\uFEFFSKU,Part No.,Description,Brand,Unit,Price,Reorder point,Location,Qty\nSP-1,BKR6E-11,Spark plug,NGK,pc,"1,250.50",4,A-1,12\nOF-2,W 712/75,Oil filter,Mann-Filter,,,,,\n'
     const result = parseProductCsv(csv)
     expect(result.missingColumns).toEqual([])
     expect(result.rows).toHaveLength(2)
