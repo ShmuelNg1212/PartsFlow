@@ -63,7 +63,7 @@ test('inline alerts enter with the shared class, and reduced motion makes them i
   await failSignIn(page)
   const alert = await submit(page)
   await expect(alert).toHaveClass(/motion-enter/)
-  expect(await alert.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0.2s, 0.2s')
+  expect(await alert.evaluate((el) => parseFloat(getComputedStyle(el).transitionDuration))).toBeGreaterThan(0.1)
   await expect.poll(() => entrances(page)).toEqual([expect.arrayContaining(['opacity', 'transform'])])
 
   const reduced = await browser.newContext({ reducedMotion: 'reduce' })

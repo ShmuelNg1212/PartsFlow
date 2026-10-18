@@ -18,7 +18,7 @@ export function ExtractionBanner({ doc }: { doc: DocumentDetail }) {
   const demo = doc.extraction_provider === 'demo'
   if (status === 'done') {
     return (
-      <div role="status" className="motion-enter mb-4 rounded-lg border border-blue-fg/20 bg-blue-bg px-4 py-3 text-sm text-blue-fg">
+      <div key={status} role="status" className="motion-enter mb-4 rounded-lg border border-blue-fg/20 bg-blue-bg px-4 py-3 text-sm text-blue-fg">
         {demo ? (
           <>
             <StatusBadge tone="blue" className="mr-2 bg-card">Demo extractor</StatusBadge>
@@ -33,7 +33,7 @@ export function ExtractionBanner({ doc }: { doc: DocumentDetail }) {
   }
   const message = doc.raw_extraction?.message ?? (status === 'failed' ? 'The document could not be read.' : 'Automatic reading is not available.')
   return (
-    <div role="status" className="motion-enter mb-4 rounded-lg border border-yellow-fg/20 bg-yellow-bg px-4 py-3 text-sm text-yellow-fg">
+    <div key={status} role="status" className="motion-enter mb-4 rounded-lg border border-yellow-fg/20 bg-yellow-bg px-4 py-3 text-sm text-yellow-fg">
       {message} {/enter/i.test(message) ? '' : 'Enter the lines by hand.'}
     </div>
   )

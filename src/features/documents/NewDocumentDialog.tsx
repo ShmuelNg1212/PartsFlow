@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { createDocument, extractDocument, keys, uploadDocumentFile } from '@/api/api'
 import type { Direction } from '@/api/types'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ACCEPT_ATTRIBUTE, fileType, safeFileName, uploadProblem } from '@/features/upload/upload'
@@ -17,7 +18,7 @@ const CHOICES: { direction: Direction; title: string; text: string; icon: typeof
   { direction: 'sale', title: 'Record a sale', text: 'Goods released to a customer. Stock goes down.', icon: ArrowUpIcon },
 ]
 
-type Step = { kind: 'direction' } | { kind: 'source'; direction: Direction } | { kind: 'working'; label: string }
+type Step = { kind: 'direction'; back?: true } | { kind: 'source'; direction: Direction } | { kind: 'working'; label: string }
 
 /**
  * R-DOC-2: the user selects the direction first. Then a photo, a file, or manual entry (R-DOC-9).
@@ -77,7 +78,8 @@ export function NewDocumentDialog({ open, onOpenChange }: { open: boolean; onOpe
     <Dialog open={open} onOpenChange={close}>
       <DialogContent>
         {step.kind === 'direction' && (
-          <>
+          // The dialog's own entrance covers the first open; Back slides like the other steps.
+          <div className={cn('grid gap-4', step.back && 'motion-enter-x')}>
             <DialogHeader>
               <DialogTitle>New document</DialogTitle>
               <DialogDescription>What does this document record?</DialogDescription>
@@ -98,7 +100,7 @@ export function NewDocumentDialog({ open, onOpenChange }: { open: boolean; onOpe
                 </button>
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {step.kind === 'source' && (
@@ -150,7 +152,7 @@ export function NewDocumentDialog({ open, onOpenChange }: { open: boolean; onOpe
                 <KeyboardIcon className="size-5 shrink-0" />
                 <span className="font-medium">Enter the lines by hand</span>
               </button>
-              <Button variant="ghost" onClick={() => setStep({ kind: 'direction' })} className="justify-self-start">
+              <Button variant="ghost" onClick={() => setStep({ kind: 'direction', back: true })} className="justify-self-start">
                 Back
               </Button>
             </div>

@@ -102,8 +102,9 @@
     --blue-bg: #E1F3FE;   --blue-fg: #1F6C9F;
 
     /* Motion: short state feedback only. See doc/wiki/architecture.md "Motion". */
-    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    /* Own names: Tailwind's ease-out and ease-in-out utilities read --ease-out and --ease-in-out. */
+    --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --motion-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @layer base {
@@ -157,20 +158,17 @@ button, [role="button"] {
   animation: none;
 }
 [data-slot="dialog-content"], [data-slot="dialog-overlay"] {
-  animation-timing-function: var(--ease-out);
+  animation-timing-function: var(--motion-ease-out);
 }
 /* Entrances play once on mount; leaving is instant so the next action never waits. */
 .motion-enter {
-  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+  transition: opacity 200ms var(--motion-ease-out), transform 200ms var(--motion-ease-out);
 }
-.motion-enter-x {
-  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
-}
-.motion-page {
-  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
+.motion-enter-x, .motion-page {
+  transition: opacity 180ms var(--motion-ease-out), transform 180ms var(--motion-ease-out);
 }
 .motion-fade {
-  transition: opacity 150ms ease-out;
+  transition: opacity 150ms var(--motion-ease-out);
 }
 @starting-style {
   .motion-enter { opacity: 0; transform: translateY(-4px); }
@@ -184,7 +182,7 @@ button, [role="button"] {
   to { transform: translateX(300%); }
 }
 .motion-progress {
-  animation: progress-slide 1.2s var(--ease-in-out) infinite;
+  animation: progress-slide 1.2s var(--motion-ease-in-out) infinite;
 }
 @keyframes progress-pulse {
   50% { opacity: 0.4; }

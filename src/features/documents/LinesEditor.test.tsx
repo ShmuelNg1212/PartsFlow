@@ -24,6 +24,6 @@ describe('LinesEditor motion', () => {
     const faded = rows().filter((r) => r.classList.contains('motion-fade'))
     // One new line, rendered twice: the desktop table row and the phone card.
     expect(faded).toHaveLength(2)
-    expect(faded.every((r) => r.textContent?.includes('3'))).toBe(true)
+    expect(faded.map((r) => r.querySelector('td, span')?.textContent)).toEqual(['3', 'Line 3'])
   })
 })
