@@ -8,6 +8,7 @@ import { evaluateExtractions, type EvaluationCase, type EvaluationRead } from '.
 import { localPaddleExtractor, workerReader } from '../supabase/functions/_shared/extraction/paddle.ts'
 import { Decimal } from 'decimal.js'
 import { SAMPLE_INVOICES } from './demo-data.mjs'
+import { DEFAULT_WORKER_URL, WORKER_TIMEOUT_MS } from './ocr-bridge-lib.ts'
 
 const dir = process.argv[2] ?? '/private/tmp/partsflow-extraction-cases'
 const out = process.argv[3] ?? '/private/tmp/partsflow-paddle-eval.md'
@@ -18,7 +19,7 @@ const reference = JSON.parse(readFileSync(join(dir, 'truth.json'), 'utf8')) as {
 if (!reference.synthetic) throw new Error('This runner is for the synthetic case set only.')
 
 const extractor = localPaddleExtractor({
-  read: workerReader({ url: process.env.OCR_WORKER_URL ?? 'http://127.0.0.1:8765', token, timeoutMs: 120_000 }),
+  read: workerReader({ url: process.env.OCR_WORKER_URL ?? DEFAULT_WORKER_URL, token, timeoutMs: WORKER_TIMEOUT_MS }),
 })
 
 type Sample = { file: string; format: string; supplier: string; number: string; date: string; lines: { wording: string; part: string; qty: string; unit: string; price: string }[] }

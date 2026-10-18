@@ -46,26 +46,19 @@ type WorkerOptions = { url: string; token: string; timeoutMs: number; fetch?: ty
 /** Reads a file through the loopback worker. A refusal becomes OcrRejected; anything else is "unavailable". */
 export function workerReader({ url, token, timeoutMs, fetch: doFetch = fetch }: WorkerOptions) {
   return async (file: Uint8Array, mime: string): Promise<OcrDocument> => {
-    const controller = new AbortController()
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => { controller.abort(); reject(new Error('OCR worker timed out')) }, timeoutMs)
+    // One signal bounds both the request and the body read.
+    const signal = AbortSignal.timeout(timeoutMs)
+    const res = await doFetch(`${url}/read`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': mime }, body: file as Uint8Array<ArrayBuffer>, signal })
+    const body = await res.json().catch(() => {
+      if (signal.aborted) throw signal.reason
+      return null
     })
-    try {
-      const res = await Promise.race([
-        doFetch(`${url}/read`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': mime }, body: new Uint8Array(file), signal: controller.signal }),
-        timeout,
-      ])
-      const body = await Promise.race([res.json().catch(() => null), timeout])
-      const message = typeof body?.error === 'string' ? body.error : null
-      if (res.status === 422 || res.status === 413) throw new OcrRejected(message ?? 'The file could not be read.')
-      if (res.status === 503) throw new OcrBusy(message ?? 'The scanner is busy. Try again shortly.')
-      if (!res.ok) throw new Error(`OCR worker answered ${res.status}`)
-      if (!isOcrDocument(body)) throw new Error('OCR worker answer is malformed')
-      return body
-    } finally {
-      clearTimeout(timer)
-    }
+    const message = typeof body?.error === 'string' ? body.error : null
+    if (res.status === 422 || res.status === 413) throw new OcrRejected(message ?? 'The file could not be read.')
+    if (res.status === 503) throw new OcrBusy(message ?? 'The scanner is busy. Try again shortly.')
+    if (!res.ok) throw new Error(`OCR worker answered ${res.status}`)
+    if (!isOcrDocument(body)) throw new Error('OCR worker answer is malformed')
+    return body
   }
 }
 
@@ -96,24 +89,18 @@ export function mapOcrDocument(doc: OcrDocument): ExtractionResult {
   for (const page of doc.pages) if (!isPoor(page)) lines.push(...readTable(page))
   if (lines.length > MAX_LINES) return failed(`The document has more than ${MAX_LINES} lines. Split it, or enter the lines by hand.`)
 
-  const result: ExtractionDone = {
+  const get = (key: keyof Labels) => headers[key] ?? field(null)
+  return {
     status: 'done',
     provider: PROVIDER,
-    doc_number: headers.doc_number ?? field(null),
-    doc_date: headers.doc_date ?? field(null),
+    doc_number: get('doc_number'),
+    doc_date: get('doc_date'),
     // Only a labelled supplier counts. An unlabelled heading is not evidence of who issued the invoice.
-    vendor_name: headers.vendor ?? field(null),
-    customer_name: headers.customer ?? field(null),
-    totals: checkTotals(headers.subtotal ?? field(null), headers.tax ?? field(null), headers.total ?? field(null), currency(headers)),
+    vendor_name: get('vendor'),
+    customer_name: get('customer'),
+    totals: checkTotals(get('subtotal'), get('tax'), get('total'), get('currency').value),
     lines,
-  }
-  return result
-}
-
-/** A currency code from "Currency:" or a totals label. Two different codes leave it empty. */
-function currency(labels: Labels): string | null {
-  const codes = [labels.currency?.value, labels.totalCurrency?.value].filter((c): c is string => !!c)
-  return new Set(codes).size === 1 ? codes[0]! : null
+  } satisfies ExtractionDone
 }
 
 // ---------- values ----------
@@ -122,6 +109,9 @@ const DECIMAL = /^\d+(\.\d+)?$/
 const GROUPED = /^\d{1,3}(,\d{3})+(\.\d+)?$/
 // Single internal spaces are kept: some makers print codes as "0 986 494 524". Codes are never normalized (R-PROD-5).
 const CODE = /^[A-Za-z0-9](?:[A-Za-z0-9\-/.]| (?=[A-Za-z0-9]))*$/
+const code = (v: string) => (CODE.test(v.trim()) ? v.trim() : null)
+const text = (v: string) => v.trim() || null
+const currencyCode = (v: string) => (/^[A-Z]{3}$/.test(v) ? v : null)
 
 function decimal(text: string): string | null {
   const t = text.trim()
@@ -174,31 +164,42 @@ function checkTotals(subtotal: Field, tax: Field, total: Field, currency: string
 
 // ---------- labelled header values ----------
 
-type Labels = Partial<Record<'doc_number' | 'doc_date' | 'customer' | 'vendor' | 'currency' | 'subtotal' | 'tax' | 'total' | 'totalCurrency', Field>>
+type Labels = Partial<Record<'doc_number' | 'doc_date' | 'customer' | 'vendor' | 'currency' | 'subtotal' | 'tax' | 'total', Field>>
 
+// Group 1 is the value. On amount labels, optional group 2 is a currency code ("TOTAL PHP: 10.00"); it counts as a currency label.
 const LABELS: { key: keyof Labels; re: RegExp; parse: (v: string) => string | null }[] = [
-  { key: 'doc_number', re: /^invoice\s*(?:number|no\.?|#)\s*:?\s*(\S.*)$/i, parse: (v) => (CODE.test(v.trim()) ? v.trim() : null) },
+  { key: 'doc_number', re: /^invoice\s*(?:number|no\.?|#)\s*:?\s*(\S.*)$/i, parse: code },
   { key: 'doc_date', re: /^(?:invoice\s+)?date\s*:?\s*(\S.*)$/i, parse: isoDate },
-  { key: 'customer', re: /^(?:customer|bill\s+to|sold\s+to)\s*:\s*(\S.*)$/i, parse: (v) => v.trim() || null },
-  { key: 'vendor', re: /^(?:supplier|vendor|seller|sold\s+by)\s*:\s*(\S.*)$/i, parse: (v) => v.trim() || null },
-  { key: 'currency', re: /^currency\s*:?\s*([A-Za-z]{3})$/i, parse: (v) => (/^[A-Z]{3}$/.test(v) ? v : null) },
+  { key: 'customer', re: /^(?:customer|bill\s+to|sold\s+to)\s*:\s*(\S.*)$/i, parse: text },
+  { key: 'vendor', re: /^(?:supplier|vendor|seller|sold\s+by)\s*:\s*(\S.*)$/i, parse: text },
+  { key: 'currency', re: /^currency\s*:?\s*([A-Za-z]{3})$/i, parse: currencyCode },
   // Amount labels: the word, an optional currency code and rate, an optional colon, then the number.
-  { key: 'subtotal', re: /^sub\s*-?\s*total(?:\s+[A-Z]{3})?\s*:?\s*([\d.,]+)$/i, parse: decimal },
-  { key: 'tax', re: /^(?:tax|vat)(?:\s+[A-Z]{3})?(?:\s*\(\d+(?:\.\d+)?%\))?\s*:?\s*([\d.,]+)$/i, parse: decimal },
-  { key: 'total', re: /^(?:grand\s+)?total(?:\s+[A-Z]{3})?\s*:?\s*([\d.,]+)$/i, parse: decimal },
-  { key: 'totalCurrency', re: /^(?:grand\s+)?total\s+([a-z]{3})\s*:?\s*[\d.,]+$/i, parse: (v) => (/^[A-Z]{3}$/.test(v) ? v : null) },
+  { key: 'subtotal', re: /^sub\s*-?\s*total(?:\s+([A-Za-z]{3}))?\s*:?\s*([\d.,]+)$/i, parse: decimal },
+  { key: 'tax', re: /^(?:tax|vat)(?:\s+([A-Za-z]{3}))?(?:\s*\(\d+(?:\.\d+)?%\))?\s*:?\s*([\d.,]+)$/i, parse: decimal },
+  { key: 'total', re: /^(?:grand\s+)?total(?:\s+([A-Za-z]{3}))?\s*:?\s*([\d.,]+)$/i, parse: decimal },
 ]
+const AMOUNT_KEYS: (keyof Labels)[] = ['subtotal', 'tax', 'total']
 
-const labelOf = (text: string) => LABELS.find((l) => l.re.test(text.trim()))
+const labelOf = (line: string) => LABELS.find((l) => l.re.test(line.trim()))
 
 function readLabels(pages: OcrPage[]): Labels | 'several' {
   const seen = new Map<keyof Labels, Field[]>()
+  const add = (key: keyof Labels, f: Field) => {
+    const list = seen.get(key)
+    if (list) list.push(f)
+    else seen.set(key, [f])
+  }
   for (const page of pages) {
     for (const line of page.lines) {
       if (line.score < LABEL_MIN_SCORE) continue
-      for (const label of LABELS.filter((l) => l.re.test(line.text.trim()))) {
-        const value = label.parse(line.text.trim().match(label.re)![1]!)
-        seen.set(label.key, [...(seen.get(label.key) ?? []), field(value, round2(line.score))])
+      const t = line.text.trim()
+      const confidence = round2(line.score)
+      for (const label of LABELS) {
+        const m = t.match(label.re)
+        if (!m) continue
+        const amount = AMOUNT_KEYS.includes(label.key)
+        add(label.key, field(label.parse(amount ? m[2]! : m[1]!), confidence))
+        if (amount && m[1]) add('currency', field(currencyCode(m[1]), confidence))
       }
     }
   }
@@ -347,7 +348,9 @@ function readTable(page: OcrPage): ExtractedLine[] {
     const cells = new Map<Column, OcrLine[]>()
     for (const p of cluster.sort((a, b) => a.x - b.x)) {
       const column = columns[bandOf(p.x)]!.column
-      cells.set(column, [...(cells.get(column) ?? []), p.line])
+      const list = cells.get(column)
+      if (list) list.push(p.line)
+      else cells.set(column, [p.line])
     }
     const onlyDescription = [...cells.keys()].every((k) => k === 'description')
     const previous = rows[rows.length - 1]
@@ -371,9 +374,9 @@ function toLine({ cells, wrapped }: Row): ExtractedLine {
   const desc = [cells.get('description') ?? [], ...wrapped].filter((ls) => ls.length > 0)
   const line: ExtractedLine = {
     description: desc.length ? field(desc.map(joinText).join('\n') || null, conf(desc.flat())) : field(null),
-    part_number: single('part_number', (t) => (CODE.test(t.trim()) ? t.trim() : null)),
+    part_number: single('part_number', code),
     quantity: single('quantity', decimal),
-    unit: single('unit', (t) => t.trim() || null),
+    unit: single('unit', text),
     unit_price: single('unit_price', decimal),
     discount: single('discount', decimal),
     amount: single('amount', decimal),

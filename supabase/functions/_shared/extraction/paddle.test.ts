@@ -262,7 +262,9 @@ describe('workerReader', () => {
   })
 
   it('treats a failed or slow worker as unavailable, not as a rejection', async () => {
-    for (const fetch of [respond(500, {}), () => new Promise<Response>(() => {})]) {
+    // The slow worker honours the abort signal, as real fetch does.
+    const slow = (_: unknown, init?: RequestInit) => new Promise<Response>((_, reject) => init!.signal!.addEventListener('abort', () => reject(init!.signal!.reason)))
+    for (const fetch of [respond(500, {}), slow]) {
       const read = workerReader({ url: 'http://127.0.0.1:1', token: 's', timeoutMs: 20, fetch })
       const err = await read(new Uint8Array([1]), 'application/pdf').catch((e: unknown) => e)
       expect(err).toBeInstanceOf(Error)

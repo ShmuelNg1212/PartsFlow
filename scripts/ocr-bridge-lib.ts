@@ -4,6 +4,9 @@
 import { handleExtract, type ExtractDeps } from '../supabase/functions/extract-document/handler.ts'
 
 export const DEV_PROJECT_REF = 'urljzpqigvtoooitwjrd'
+export const DEFAULT_WORKER_URL = 'http://127.0.0.1:8765'
+/** From P1 timings: a three-page PDF took about 22 s on CPU. */
+export const WORKER_TIMEOUT_MS = 120_000
 const MAX_BODY = 1024
 
 export type BridgeConfig = { supabaseUrl: string; publishableKey: string; dbUrl: string; workerUrl: string; workerToken: string }
@@ -12,7 +15,7 @@ export type BridgeConfig = { supabaseUrl: string; publishableKey: string; dbUrl:
 export function checkDevConfig(env: Record<string, string | undefined>): BridgeConfig {
   const supabaseUrl = env.VITE_SUPABASE_URL ?? ''
   const dbUrl = env.SUPABASE_DB_URL ?? ''
-  const workerUrl = env.OCR_WORKER_URL ?? 'http://127.0.0.1:8765'
+  const workerUrl = env.OCR_WORKER_URL ?? DEFAULT_WORKER_URL
   const workerToken = env.OCR_WORKER_TOKEN ?? ''
   if (env.SUPABASE_PROJECT_REF !== DEV_PROJECT_REF) throw new Error(`The local bridge runs only against the development project ${DEV_PROJECT_REF}.`)
   if (supabaseUrl !== `https://${DEV_PROJECT_REF}.supabase.co`) throw new Error('VITE_SUPABASE_URL is not the development project.')

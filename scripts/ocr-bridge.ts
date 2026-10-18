@@ -1,20 +1,19 @@
 // Usage: OCR_WORKER_TOKEN=... node scripts/ocr-bridge.ts
 // Local OCR bridge for development (plan P3). Listens on 127.0.0.1:8766. The Vite dev server
 // proxies /local-ocr to it when VITE_LOCAL_OCR=true. Refuses to start for any project but development.
-import { createHash } from 'node:crypto'
 import { createServer } from 'node:http'
 import { createClient } from '@supabase/supabase-js'
 import pg from 'pg'
+import { sha256Hex } from '../supabase/functions/_shared/extraction/demo.ts'
 import { localPaddleExtractor, workerReader } from '../supabase/functions/_shared/extraction/paddle.ts'
 import { dbConfig, loadEnvLocal } from './db-config.mjs'
-import { checkDevConfig, makeBridgeHandler } from './ocr-bridge-lib.ts'
+import { checkDevConfig, makeBridgeHandler, WORKER_TIMEOUT_MS } from './ocr-bridge-lib.ts'
 
 loadEnvLocal()
 const config = checkDevConfig(process.env)
 const port = Number(process.env.OCR_BRIDGE_PORT ?? 8766)
 const pool = new pg.Pool({ ...dbConfig(config.dbUrl), max: 2 })
-const auth = createClient(config.supabaseUrl, config.publishableKey, { auth: { persistSession: false, autoRefreshToken: false } })
-const extractor = localPaddleExtractor({ read: workerReader({ url: config.workerUrl, token: config.workerToken, timeoutMs: 120_000 }) })
+const extractor = localPaddleExtractor({ read: workerReader({ url: config.workerUrl, token: config.workerToken, timeoutMs: WORKER_TIMEOUT_MS }) })
 
 const handle = makeBridgeHandler({
   allowedOrigins: ['http://localhost:5173', 'http://127.0.0.1:5173'],
@@ -23,14 +22,14 @@ const handle = makeBridgeHandler({
     return res.ok && (await res.json()).ready === true
   },
   makeDeps(token) {
-    // Storage reads run as the signed-in user, so storage policies still apply.
+    // Auth checks the session; Storage reads run as the signed-in user, so storage policies still apply.
     const asUser = createClient(config.supabaseUrl, config.publishableKey, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: { headers: { Authorization: `Bearer ${token}` } },
     })
     return {
       async getUserFromToken(t) {
-        const { data, error } = await auth.auth.getUser(t)
+        const { data, error } = await asUser.auth.getUser(t)
         return error || !data.user ? null : { id: data.user.id }
       },
       async getDocument(id) {
@@ -46,7 +45,7 @@ const handle = makeBridgeHandler({
         if (error || !data) throw error ?? new Error('download failed')
         return new Uint8Array(await data.arrayBuffer())
       },
-      sha256: async (bytes) => createHash('sha256').update(bytes).digest('hex'),
+      sha256: sha256Hex,
       extractor,
       async apply(documentId, sha256, result) {
         const { rows } = await pool.query('select public.apply_extraction($1::uuid, $2, $3::jsonb) as r', [documentId, sha256, JSON.stringify(result)])

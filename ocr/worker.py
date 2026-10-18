@@ -79,11 +79,14 @@ def make_server(host: str, port: int, token: str, load: Callable[[], Any], limit
             if mime not in reader.SUFFIX:
                 return self.reply(422, {"error": "Use a PDF, JPEG, PNG or WebP file."})
             if state["pipeline"] is None:
+                self.close_connection = True
                 return self.reply(503, {"error": "The scanner is still starting." if state["error"] is None else "The scanner failed to start."})
-            data = self.rfile.read(length)
+            # Take the lock before reading the body, so a busy worker does not read a file it will refuse.
             if not BUSY.acquire(blocking=False):
+                self.close_connection = True
                 return self.reply(503, {"error": "The scanner is busy. Try again shortly."})
             try:
+                data = self.rfile.read(length)
                 return self.reply(200, reader.read_document(state["pipeline"], data, mime, limits))
             except (UnsupportedInput, IncompleteRead) as err:
                 return self.reply(422, {"error": str(err)})
