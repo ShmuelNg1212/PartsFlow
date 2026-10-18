@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "description": "Synthetic ground truth only. No provider results or measured OCR accuracy.",
+  "cases": [
+    {
+      "id": "readable-pdf",
+      "file": "readable-invoice.pdf",
+      "mime_type": "application/pdf",
+      "direction": "receipt",
+      "truth": {
+        "doc_number": "SYN-EVAL-101",
+        "doc_date": "2026-10-18",
+        "vendor_name": "Fictional Orbit Parts Lab",
+        "customer_name": "Synthetic Pine Workshop",
+        "currency": "PHP",
+        "subtotal": "997.00",
+        "tax": "119.64",
+        "total": "1116.64",
+        "lines": [
+          {
+            "description": "Oil filter, model A",
+            "part_number": "LAB-OF-001",
+            "quantity": "3",
+            "unit": "pc",
+            "unit_price": "125.50",
+            "discount": "0.00",
+            "amount": "376.50"
+          },
+          {
+            "description": "Air filter, model B",
+            "part_number": "LAB-AF-002",
+            "quantity": "2",
+            "unit": "pc",
+            "unit_price": "310.25",
+            "discount": "0.00",
+            "amount": "620.50"
+          }
+        ]
+      },
+      "expected_outcome": "extract"
+    },
+    {
+      "id": "phone-photo",
+      "file": "phone-photo.jpg",
+      "mime_type": "image/jpeg",
+      "direction": "sale",
+      "truth": {
+        "doc_number": "SYN-EVAL-102",
+        "doc_date": "2026-10-18",
+        "vendor_name": "Synthetic Pine Workshop",
+        "customer_name": "Fictional Cedar Garage",
+        "currency": "PHP",
+        "subtotal": "1701.50",
+        "tax": "204.18",
+        "total": "1905.68",
+        "lines": [
+          {
+            "description": "Brake pad set",
+            "part_number": "LAB-BP-030",
+            "quantity": "2",
+            "unit": "pc",
+            "unit_price": "850.75",
+            "discount": "0.00",
+            "amount": "1701.50"
+          }
+        ]
+      },
+      "expected_outcome": "extract"
+    },
+    {
+      "id": "missing-fields",
+      "file": "missing-fields.pdf",
+      "mime_type": "application/pdf",
+      "direction": "receipt",
+      "truth": {
+        "doc_number": null,
+        "doc_date": null,
+        "vendor_name": "Fictional Orbit Parts Lab",
+        "customer_name": null,
+        "currency": "PHP",
+        "subtotal": null,
+        "tax": null,
+        "total": "90.00",
+        "lines": [
+          {
+            "description": "Unmarked rubber seal",
+            "part_number": null,
+            "quantity": "4",
+            "unit": "pc",
+            "unit_price": "22.50",
+            "discount": "0.00",
+            "amount": "90.00"
+          }
+        ]
+      },
+      "expected_outcome": "extract"
+    },
+    {
+      "id": "discounts",
+      "file": "multi-line-discounts.pdf",
+      "mime_type": "application/pdf",
+      "direction": "receipt",
+      "truth": {
+        "doc_number": "SYN-EVAL-104",
+        "doc_date": "2026-10-18",
+        "vendor_name": "Fictional Orbit Parts Lab",
+        "customer_name": "Synthetic Pine Workshop",
+        "currency": "PHP",
+        "subtotal": "2429.99",
+        "tax": "291.60",
+        "total": "2721.59",
+        "lines": [
+          {
+            "description": "Drive belt, reinforced\nFor fictional engine series Z",
+            "part_number": "LAB-DB-041",
+            "quantity": "2",
+            "unit": "pc",
+            "unit_price": "780.25",
+            "discount": "80.50",
+            "amount": "1480.00"
+          },
+          {
+            "description": "Spark plug\nPack sold as individual pieces",
+            "part_number": "LAB-SP-018",
+            "quantity": "6",
+            "unit": "pc",
+            "unit_price": "95.10",
+            "discount": "20.60",
+            "amount": "550.00"
+          },
+          {
+            "description": "Coolant hose",
+            "part_number": "LAB-CH-020",
+            "quantity": "1",
+            "unit": "pc",
+            "unit_price": "399.99",
+            "discount": "0.00",
+            "amount": "399.99"
+          }
+        ]
+      },
+      "expected_outcome": "extract"
+    },
+    {
+      "id": "poor-rotated-photo",
+      "file": "poor-rotated-photo.jpg",
+      "mime_type": "image/jpeg",
+      "direction": "receipt",
+      "truth": {
+        "doc_number": "SYN-EVAL-105",
+        "doc_date": "2026-10-18",
+        "vendor_name": "Fictional Orbit Parts Lab",
+        "customer_name": "Synthetic Pine Workshop",
+        "currency": "PHP",
+        "subtotal": "1398.50",
+        "tax": "167.82",
+        "total": "1566.32",
+        "lines": [
+          {
+            "description": "Wheel bearing",
+            "part_number": "LAB-WB-008",
+            "quantity": "2",
+            "unit": "pc",
+            "unit_price": "625.40",
+            "discount": "0.00",
+            "amount": "1250.80"
+          },
+          {
+            "description": "Hub seal",
+            "part_number": "LAB-HS-009",
+            "quantity": "2",
+            "unit": "pc",
+            "unit_price": "73.85",
+            "discount": "0.00",
+            "amount": "147.70"
+          }
+        ]
+      },
+      "expected_outcome": "extract"
+    },
+    {
+      "id": "three-page-pdf",
+      "file": "three-page-invoice.pdf",
+      "mime_type": "application/pdf",
+      "direction": "receipt",
+      "expected_outcome": "extract",
+      "truth": {
+        "doc_number": "SYN-EVAL-106",
+        "doc_date": "2026-10-18",
+        "vendor_name": "Fictional Orbit Parts Lab",
+        "customer_name": "Synthetic Pine Workshop",
+        "currency": "PHP",
+        "subtotal": "210.00",
+        "tax": "25.20",
+        "total": "235.20",
+        "lines": [
+          {
+            "description": "Test axle bushing",
+            "part_number": "LAB-AB-010",
+            "quantity": "1",
+            "unit": "pc",
+            "unit_price": "210.00",
+            "discount": "0.00",
+            "amount": "210.00"
+          }
+        ]
+      }
+    }
+  ]
+}

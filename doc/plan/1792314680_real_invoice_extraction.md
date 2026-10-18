@@ -47,7 +47,7 @@ No actual hosted OCR call ran. Its setup wizard and provider-specific study were
   - Acceptance: the Mac returns real text and table output. Record exact versions and commands. Do not substitute a fixture or a canned result.
   - Complete when the smoke-test evidence is recorded. If the runtime fails, stop and report it before building the bridge. Do not silently add another model or hosted provider.
 
-- [ ] P2. Map invoice fields and measure the supported layouts. **tests: first**.
+- [x] P2. Map invoice fields and measure the supported layouts. **tests: first**.
   - Test through the worker's public extraction interface. Cover headers, receipt suppliers, sale customers, line items, units, discounts, totals, and exact part codes.
   - Map fields only from explicit evidence. Treat OCR text and table HTML as data. Preserve raw output separately.
   - Handle missing columns, unknown layouts, multiple invoices, corrupt files, and incomplete page results. Do not report a partial document as fully read.
@@ -58,6 +58,7 @@ No actual hosted OCR call ran. Its setup wizard and provider-specific study were
   - Complete when the mapper tests pass and a measured PaddleOCR report is saved. Real-shop accuracy remains unknown.
 
 - [ ] P3. Connect the local app through an authenticated bridge. **tests: first**.
+  - Done: loopback worker `ocr/worker.py` with internal bearer token, byte limit before reading, MIME check, one read at a time (503 while busy), page-complete reads, and `/health`. 10 pytest tests. Limits: 10 MB and 5 pages; client timeout 120 s, from P1 timings (21.9 s for 3 pages).
   - Reuse the existing extraction handler and Extractor interface. Keep privileged writes server-side.
   - Test the bridge request interface for expired sessions, another shop, non-drafts, invalid file paths, production configuration, and unavailable OCR.
   - Bind the bridge and worker to loopback. Require a private internal credential for bridge-to-worker requests. Restrict browser origins.
@@ -90,6 +91,11 @@ No actual hosted OCR call ran. Its setup wizard and provider-specific study were
 - D1. The worker uses the PaddleOCR text pipeline, not PP-StructureV3. The mapper needs only text lines and their boxes. StructureV3 table HTML shifted columns in the smoke test. The text pipeline is about two times faster. Formula, seal, chart, table and layout models are not loaded.
 - D2. Invoice-field mapping is in TypeScript behind the existing Extractor interface. The Python worker returns text lines with boxes only. This reuses the decimal rules, the result types, scoring and Vitest. The study proposed mapping inside the worker; this choice is reversible.
 - D3. Models are pinned by name: PP-OCRv6_medium_det, PP-OCRv6_medium_rec, PP-LCNet_x1_0_doc_ori and PP-LCNet_x1_0_textline_ori.
+- D4. The supplier is read only from an explicit label ("Supplier:", "Vendor:", "Seller:", "Sold by:"). A first version guessed the heading above the labels. On the held-out samples it chose a disclaimer line. A heading is not evidence, so the guess was removed.
+- D5. A text fragment that crosses one column boundary ("20 pc", "Qty Unit") is split by word. Each word goes to the column under its estimated centre. A fragment that crosses two or more boundaries ends the table.
+- D6. A row whose quantity times unit price, less discount, does not equal its amount loses all four numbers. The description, part number and unit stay. A row that cannot be checked keeps its numbers with confidence at most 0.5.
+- D7. A page where more than 25% of text lines score below 0.8 gives no table lines. Labelled header values with a score of 0.9 or more are still used.
+- D8. Only ISO dates (YYYY-MM-DD) are read. Day/month order is ambiguous in other formats.
 
 ## P1 evidence
 
@@ -110,6 +116,16 @@ Measured on this Mac, CPU only, actual inference on the six synthetic cases:
 Pipeline load with two model downloads: 68.4 s. Load from cache with `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True`: 2.5 s. Peak resident memory for the measuring process: about 4.8 GB.
 Every page of every case returned a result. The readable, discount, three-page and phone-photo text lines are clean. The phone photo is skewed, so rows must be deskewed before grouping. The poor rotated photo is mostly unreadable text in reversed order.
 Raw output is in `/private/tmp/partsflow-paddle-p1`, outside Git.
+
+## P2 evidence
+
+Mapper: `supabase/functions/_shared/extraction/paddle.ts` (`localPaddleExtractor`, `workerReader`). Tests: `paddle.test.ts`, 27 tests. The fixtures are actual PaddleOCR output for the six generated cases and the three bundled demo samples.
+The tests were written before the mapper. The first run failed on the missing module. Later fixes followed failing tests: currency label case, wrapped descriptions, merged cells, colon-less totals, and spaced part codes.
+Measured report: [synthetic evaluation](../study/1792320512_paddleocr_synthetic_eval.md). Runner: `node scripts/eval-local-ocr.ts` against the running worker.
+Generated cases: 6 of 6 read; 8 of 10 lines. Both missing lines are from the poor rotated photo, which gives no lines by design. Every present field on the other five cases matches, except the unlabelled supplier.
+Demo samples: 3 of 3 read; 12 of 12 lines. Part number, quantity, unit, unit price, amount, total, number, date and currency match 100%. Descriptions match 10 of 12; the two misses are OCR character errors.
+The demo samples were held out for the first run, which found no lines. The mapper was fixed after that run. They are not an independent test now.
+Limits: one table per page with a "Description" header; labelled header values in English; ISO dates only; no supplier without a label; no rotated or poor photos. Real-shop accuracy is unknown.
 
 ## Rendezvous
 
