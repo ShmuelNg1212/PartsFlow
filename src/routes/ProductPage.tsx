@@ -61,7 +61,7 @@ export function ProductPage() {
         }
       />
 
-      <dl className="mb-8 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
+      <dl className="mb-8 grid grid-cols-1 gap-px min-[400px]:grid-cols-2 overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
         <Fact label="On hand">
           <span className="num text-2xl">{formatQty(p.qty)}</span> <span className="text-muted-foreground">{p.base_unit}</span>
           {p.is_low && <StatusBadge tone="yellow" className="ml-2 align-middle">Low stock</StatusBadge>}
@@ -98,7 +98,7 @@ export function ProductPage() {
 
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="bg-card px-4 py-3">
+    <div className="min-w-0 bg-card px-4 py-3 wrap-anywhere">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="mt-1">{children}</dd>
     </div>

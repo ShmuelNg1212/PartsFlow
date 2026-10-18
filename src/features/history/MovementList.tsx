@@ -39,7 +39,7 @@ function Source({ m }: { m: Movement }) {
 export function MovementList({ movements, timeZone, showProduct }: { movements: Movement[]; timeZone: string; showProduct: boolean }) {
   return (
     <>
-      <div className="hidden overflow-hidden rounded-lg border border-border bg-card md:block">
+      <div className="hidden overflow-x-auto rounded-lg border border-border bg-card md:block">
         <table className="w-full text-sm">
           <thead className="border-b border-border text-left text-xs text-muted-foreground">
             <tr>
@@ -77,8 +77,8 @@ export function MovementList({ movements, timeZone, showProduct }: { movements: 
       </div>
       <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card md:hidden">
         {movements.map((m) => (
-          <li key={m.id} className="flex items-start gap-3 px-3 py-3">
-            <div className="min-w-0 flex-1 text-sm">
+          <li key={m.id} className="flex flex-wrap items-start gap-3 px-3 py-3">
+            <div className="min-w-32 flex-1 text-sm wrap-anywhere">
               {showProduct && m.product && (
                 <Link to={`/inventory/${m.product.id}`} className="block break-words">
                   <span className="num">{m.product.sku}</span> {m.product.description}

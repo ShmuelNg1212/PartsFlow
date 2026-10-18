@@ -28,7 +28,7 @@ function ShopSwitcher() {
   if (memberships.length < 2) {
     return (
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{shop.name}</p>
+        <p title={shop.name} className="truncate text-sm font-medium">{shop.name}</p>
         <p className="text-xs text-muted-foreground capitalize">{role}</p>
       </div>
     )
@@ -111,14 +111,14 @@ export function AppShell() {
           </div>
           <button
             onClick={() => supabase.auth.signOut()}
-            className="flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground"
+            className="flex min-h-11 min-w-11 justify-center items-center gap-1.5 text-sm text-muted-foreground"
             aria-label="Sign out"
           >
             <SignOutIcon className="size-5" />
           </button>
         </header>
 
-        <main className="min-w-0 flex-1 px-4 pt-5 pb-28 sm:px-6 md:pb-10 lg:px-8">
+        <main className="min-w-0 flex-1 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-10 lg:px-8">
           <Outlet />
         </main>
       </div>

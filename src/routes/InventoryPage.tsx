@@ -92,7 +92,7 @@ function ProductList({ products }: { products: ProductStock[] }) {
   return (
     <>
       {/* Desktop table */}
-      <div className="hidden overflow-hidden rounded-lg border border-border bg-card md:block">
+      <div className="hidden overflow-x-auto rounded-lg border border-border bg-card md:block">
         <table className="w-full text-sm">
           <thead className="border-b border-border text-left text-xs text-muted-foreground">
             <tr>
@@ -107,13 +107,13 @@ function ProductList({ products }: { products: ProductStock[] }) {
           <tbody>
             {products.map((p) => (
               <tr key={p.id} className="border-b border-border last:border-0 hover:bg-accent/60">
-                <td className="num px-3 py-2">
+                <td className="num px-3 py-2 break-all">
                   <Link to={`/inventory/${p.id}`} className="underline-offset-4 hover:underline">
                     {p.sku}
                   </Link>
                 </td>
                 <td className="max-w-80 px-3 py-2">
-                  <Link to={`/inventory/${p.id}`} className="line-clamp-2 break-words">
+                  <Link to={`/inventory/${p.id}`} title={p.description} className="line-clamp-2 break-words">
                     {p.description}
                   </Link>
                 </td>
@@ -138,14 +138,14 @@ function ProductList({ products }: { products: ProductStock[] }) {
       <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card md:hidden">
         {products.map((p) => (
           <li key={p.id}>
-            <Link to={`/inventory/${p.id}`} className="flex items-start gap-3 px-3 py-3 active:bg-accent">
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 break-words">{p.description}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
+            <Link to={`/inventory/${p.id}`} className="flex flex-wrap items-start gap-3 px-3 py-3 active:bg-accent">
+              <div className="min-w-32 flex-1">
+                <p title={p.description} className="line-clamp-2 break-words">{p.description}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground wrap-anywhere">
                   <span className="num">{p.sku}</span> · {p.brand} · <span className="num break-all">{p.part_number}</span>
                 </p>
               </div>
-              <div className="shrink-0 text-right">
+              <div className="min-w-0 max-w-full text-right wrap-anywhere">
                 <p className="num">
                   {formatQty(p.qty)} <span className="text-xs text-muted-foreground">{p.base_unit}</span>
                 </p>

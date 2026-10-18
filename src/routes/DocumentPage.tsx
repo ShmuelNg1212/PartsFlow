@@ -323,7 +323,7 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
       </div>
 
       {/* Action bar: sticky at the bottom, above the phone navigation. */}
-      <div className="sticky bottom-16 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 md:bottom-0 lg:-mx-8 lg:px-8">
+      <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 md:bottom-0 lg:-mx-8 lg:px-8">
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-auto text-sm text-muted-foreground" aria-live="polite">
             {save.isPending ? 'Saving…' : dirty ? 'Unsaved changes' : 'All changes saved'}
