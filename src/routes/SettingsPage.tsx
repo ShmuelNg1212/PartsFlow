@@ -68,7 +68,7 @@ function ShopForm() {
   const save = useMutation({
     mutationFn: () => updateShop(shop.id, { name: name.trim(), currency, timezone }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.memberships })
+      queryClient.invalidateQueries({ queryKey: keys.memberships() })
       toast.success('Settings saved.')
     },
   })

@@ -21,7 +21,7 @@ export function ProductPage() {
   const { shop, isOwner } = useShop()
   const [editing, setEditing] = useState(false)
   const [opening, setOpening] = useState(false)
-  const product = useQuery({ queryKey: keys.product(shop.id, id), queryFn: () => getProduct(id) })
+  const product = useQuery({ queryKey: keys.product(shop.id, id), queryFn: () => getProduct(shop.id, id) })
   const movements = useQuery({ queryKey: keys.movements(shop.id, id), queryFn: () => listMovements(shop.id, id) })
 
   const back = (

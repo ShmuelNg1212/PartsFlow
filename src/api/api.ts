@@ -31,7 +31,7 @@ function one<T>(res: { data: T; error: unknown }): NonNullable<T> {
 const asNumeric = (value: string) => value as unknown as number
 
 export const keys = {
-  memberships: ['memberships'] as const,
+  memberships: (userId?: string) => userId ? ['memberships', userId] as const : ['memberships'] as const,
   shop: (shopId: string) => ['shop', shopId] as const,
   products: (shopId: string, q: string) => ['shop', shopId, 'products', q] as const,
   product: (shopId: string, id: string) => ['shop', shopId, 'product', id] as const,
@@ -61,8 +61,8 @@ export async function searchProducts(shopId: string, query: string): Promise<Pro
   return (rows ?? []) as ProductStock[]
 }
 
-export async function getProduct(id: string): Promise<ProductStock | null> {
-  const row = check(await supabase.from('product_stock').select('*').eq('id', id).maybeSingle())
+export async function getProduct(shopId: string, id: string): Promise<ProductStock | null> {
+  const row = check(await supabase.from('product_stock').select('*').eq('shop_id', shopId).eq('id', id).maybeSingle())
   return row as ProductStock | null
 }
 
@@ -148,7 +148,7 @@ export async function listDocuments(shopId: string, filter: DocumentFilter, limi
 const LINE_COLUMNS =
   'id, line_no, description, part_number, quantity::text, unit, unit_price::text, discount::text, received_quantity::text, conversion_factor::text, product_id, match_source, suggested_product_id, raw, product:products!document_lines_product_id_shop_id_fkey(id, sku, description, brand, base_unit, part_number)'
 
-export async function getDocument(id: string): Promise<DocumentDetail | null> {
+export async function getDocument(shopId: string, id: string): Promise<DocumentDetail | null> {
   const row = check(
     await supabase
       .from('documents')
@@ -159,6 +159,7 @@ export async function getDocument(id: string): Promise<DocumentDetail | null> {
          counterparty:counterparties(id, name, kind),
          lines:document_lines(${LINE_COLUMNS})`,
       )
+      .eq('shop_id', shopId)
       .eq('id', id)
       .order('line_no', { referencedTable: 'document_lines' })
       .maybeSingle(),

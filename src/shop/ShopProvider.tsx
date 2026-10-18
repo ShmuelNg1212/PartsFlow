@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 import { keys, listMemberships } from '@/api/api'
 import type { Membership, Role, Shop } from '@/api/types'
 import { useSession } from '@/auth/AuthProvider'
@@ -28,8 +29,9 @@ function readStoredShop(): string | null {
 
 export function ShopProvider({ children }: { children: ReactNode }) {
   const session = useSession()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const memberships = useQuery({ queryKey: keys.memberships, queryFn: () => listMemberships(session.user.id) })
+  const memberships = useQuery({ queryKey: keys.memberships(session.user.id), queryFn: () => listMemberships(session.user.id) })
   const [selectedId, setSelectedId] = useState<string | null>(readStoredShop)
 
   const selectShop = useCallback(
@@ -50,7 +52,15 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     return list.find((m) => m.shop.id === selectedId) ?? list[0] ?? null
   }, [memberships.data, selectedId])
 
-  useRealtimeRefresh(current?.shop.id ?? null)
+  const shopId = current?.shop.id ?? null
+  const previousShop = useRef<string | null>(shopId)
+  useEffect(() => {
+    // The keyed route has unmounted and removed its draft blocker before navigation.
+    if (previousShop.current && shopId && previousShop.current !== shopId) navigate('/')
+    previousShop.current = shopId
+  }, [shopId, navigate])
+
+  useRealtimeRefresh(shopId)
 
   const value = useMemo<ShopContextValue | null>(
     () =>
@@ -87,7 +97,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       </div>
     )
   }
-  return <ShopContext value={value}>{children}</ShopContext>
+  return <ShopContext value={value}><Fragment key={value.shop.id}>{children}</Fragment></ShopContext>
 }
 
 export function useShop(): ShopContextValue {

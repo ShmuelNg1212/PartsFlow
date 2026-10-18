@@ -14,7 +14,7 @@ export function HistoryPage() {
   const movements = useQuery({ queryKey: keys.movements(shop.id, productId), queryFn: () => listMovements(shop.id, productId) })
   const product = useQuery({
     queryKey: keys.product(shop.id, productId ?? ''),
-    queryFn: () => getProduct(productId!),
+    queryFn: () => getProduct(shop.id, productId!),
     enabled: !!productId,
   })
 

@@ -30,7 +30,7 @@ import { useShop } from '@/shop/ShopProvider'
 export function DocumentPage() {
   const { id = '' } = useParams()
   const { shop } = useShop()
-  const doc = useQuery({ queryKey: keys.document(shop.id, id), queryFn: () => getDocument(id) })
+  const doc = useQuery({ queryKey: keys.document(shop.id, id), queryFn: () => getDocument(shop.id, id) })
 
   const back = (
     <Link to="/inbox" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
@@ -85,14 +85,13 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
     recordDocumentOpened(doc.id).catch(() => undefined)
   }, [doc.id])
 
-  // Keep an unsaved copy on this device.
+  // Keep each edit on this device before a shop change can unmount the workspace.
   useEffect(() => {
     if (!dirty) {
       if (!restore) clearLocalDraft(doc.id)
       return
     }
-    const t = setTimeout(() => writeLocalDraft(doc.id, { savedAt: new Date().toISOString(), baseUpdatedAt: base.updatedAt, state }), 400)
-    return () => clearTimeout(t)
+    writeLocalDraft(doc.id, { savedAt: new Date().toISOString(), baseUpdatedAt: base.updatedAt, state })
   }, [dirty, state, base.updatedAt, doc.id, restore])
 
   // Warn before leaving with unsaved edits (in-app navigation and tab close).
@@ -111,7 +110,7 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
   }, [dirty])
 
   const reload = useCallback(async () => {
-    const fresh = await queryClient.fetchQuery({ queryKey: keys.document(shop.id, doc.id), queryFn: () => getDocument(doc.id) })
+    const fresh = await queryClient.fetchQuery({ queryKey: keys.document(shop.id, doc.id), queryFn: () => getDocument(shop.id, doc.id) })
     return fresh
   }, [queryClient, shop.id, doc.id])
 
@@ -392,7 +391,7 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
               setCreatingFor(null)
               if (!line) return
               // R-DOC-7: the new product is selected on the line it came from.
-              const p = await getProduct(productId)
+              const p = await getProduct(shop.id, productId)
               if (!p) return
               const product: LineProduct = { id: p.id, sku: p.sku, description: p.description, brand: p.brand, base_unit: p.base_unit, part_number: p.part_number }
               setState((s) => ({ ...s, lines: s.lines.map((l) => (l.key === line.key ? { ...l, product, product_id: p.id, match_source: 'created' } : l)) }))
