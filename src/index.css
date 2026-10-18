@@ -172,3 +172,15 @@ button, [role="button"] {
     padding-right: max(1rem, env(safe-area-inset-right));
   }
 }
+
+@layer base {
+  @media (max-width: 767px), (pointer: coarse) {
+    /* Inline links need a touch box too; layout utilities keep list links full width. */
+    a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+}
