@@ -300,3 +300,10 @@ export async function inviteMember(shopId: string, email: string, role: 'owner' 
   }
   return data as InviteResult
 }
+
+// --- CSV import --------------------------------------------------------------
+
+export async function importProducts(shopId: string, rows: object[]): Promise<{ inserted: number }> {
+  const result = check(await supabase.rpc('import_products', { p_shop_id: shopId, p_rows: rows as unknown as Json }))
+  return result as unknown as { inserted: number }
+}

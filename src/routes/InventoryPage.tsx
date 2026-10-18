@@ -34,9 +34,14 @@ export function InventoryPage() {
         description="Search by SKU, part number, description, brand, or a supplier's wording."
         actions={
           isOwner && (
-            <Button onClick={() => setCreating(true)} className="h-10">
-              <PlusIcon /> New product
-            </Button>
+            <>
+              <Button variant="outline" className="h-10" asChild>
+                <Link to="/inventory/import">Import CSV</Link>
+              </Button>
+              <Button onClick={() => setCreating(true)} className="h-10">
+                <PlusIcon /> New product
+              </Button>
+            </>
           )
         }
       />
@@ -67,7 +72,7 @@ export function InventoryPage() {
             title="No products yet"
             action={isOwner && <Button onClick={() => setCreating(true)}>Create the first product</Button>}
           >
-            {isOwner ? 'Add products one by one.' : 'An owner adds products.'}
+            {isOwner ? 'Add products one by one, or import a CSV file.' : 'An owner adds products.'}
           </EmptyState>
         )
       ) : (

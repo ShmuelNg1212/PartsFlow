@@ -3,6 +3,7 @@ import { RequireAuth } from '@/auth/RequireAuth'
 import { AppShell } from '@/components/app/AppShell'
 import { DocumentPage } from '@/routes/DocumentPage'
 import { HistoryPage } from '@/routes/HistoryPage'
+import { ImportProductsPage } from '@/routes/ImportProductsPage'
 import { InboxPage } from '@/routes/InboxPage'
 import { InventoryPage } from '@/routes/InventoryPage'
 import { NotFoundPage } from '@/routes/NotFoundPage'
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
           { path: 'inbox', Component: InboxPage },
           { path: 'inbox/:id', Component: DocumentPage },
           { path: 'inventory', Component: InventoryPage },
+          { path: 'inventory/import', Component: ImportProductsPage },
           { path: 'inventory/:id', Component: ProductPage },
           { path: 'history', Component: HistoryPage },
           { path: 'settings', Component: SettingsPage },
