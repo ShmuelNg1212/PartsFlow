@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { emptyLine, lineIssues, needsFactor, type EditableLine } from './draft'
+import { sameValue, UNCERTAIN_BELOW } from './ExtractionBanner'
 import { ProductPicker, type Pick } from './ProductPicker'
 
 type Props = {
@@ -18,15 +19,21 @@ type Props = {
 
 type Field = 'description' | 'part_number' | 'quantity' | 'unit' | 'received_quantity' | 'conversion_factor' | 'unit_price'
 
-/** R-DOC-4: show the raw extracted value when the corrected value differs. */
+/** R-DOC-4, R-DOC-5: the raw extracted value when it differs, and uncertain or missing fields. */
 function RawHint({ line, field }: { line: EditableLine; field: string }) {
-  const raw = line.raw?.[field]
+  if (!line.raw) return null
+  const raw = line.raw[field]
   const current = (line as unknown as Record<string, string>)[field] ?? ''
-  if (!raw || raw.value === null || raw.value === undefined || String(raw.value) === current) return null
-  const low = typeof raw.confidence === 'number' && raw.confidence < 0.8
+  if (!raw || raw.value === null || raw.value === undefined) {
+    return ['description', 'quantity', 'unit_price'].includes(field) && !current ? <p className="mt-0.5 text-[11px] text-yellow-fg">Not found</p> : null
+  }
+  const low = typeof raw.confidence === 'number' && raw.confidence < UNCERTAIN_BELOW
+  const differs = !sameValue(String(raw.value), current)
+  if (!low && !differs) return null
   return (
     <p className={cn('mt-0.5 truncate text-[11px]', low ? 'text-yellow-fg' : 'text-muted-foreground')} title={`Extracted: ${raw.value}`}>
-      Extracted: {String(raw.value)}
+      {low ? 'Uncertain: ' : 'Extracted: '}
+      {String(raw.value)}
     </p>
   )
 }
@@ -84,9 +91,9 @@ export function LinesEditor({ direction, lines, onChange, counterpartyId, showIs
   const anyFactor = lines.some(needsFactor)
 
   return (
-    <div ref={root}>
+    <div ref={root} className="@container">
       {/* Desktop: table */}
-      <div className="hidden overflow-x-auto rounded-lg border border-border bg-card lg:block">
+      <div className="hidden overflow-x-auto rounded-lg border border-border bg-card @4xl:block">
         <table className="w-full text-sm">
           <thead className="border-b border-border text-left text-xs text-muted-foreground">
             <tr>
@@ -150,14 +157,14 @@ export function LinesEditor({ direction, lines, onChange, counterpartyId, showIs
       </div>
 
       {/* Phone and tablet: stacked cards */}
-      <ol className="space-y-3 lg:hidden">
+      <ol className="space-y-3 @4xl:hidden">
         {lines.map((l, i) => {
           const issues = showIssues ? lineIssues(l, direction) : []
           return (
             <li key={l.key} className={cn('rounded-lg border border-border bg-card p-3', issues.length > 0 && 'border-yellow-fg/40 bg-yellow-bg/30')}>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium">Line {i + 1}</span>
-                <Button type="button" variant="ghost" size="sm" onClick={() => remove(l.key)} className="min-h-11 text-muted-foreground">
+                <Button type="button" variant="ghost" size="sm" aria-label={`Remove line ${i + 1}`} onClick={() => remove(l.key)} className="min-h-11 text-muted-foreground">
                   <TrashIcon /> Remove
                 </Button>
               </div>

@@ -80,6 +80,7 @@ export type DocumentDetail = {
   raw_doc_number: string | null
   raw_doc_date: string | null
   raw_counterparty: string | null
+  raw_extraction: RawExtraction | null
   extraction_provider: string | null
   extraction_status: string
   file_path: string | null
@@ -113,4 +114,16 @@ export type Suggestion = {
   source: 'alias' | 'part_number' | 'description'
   score: number
   confident: boolean
+}
+
+/** The stored extraction result (see supabase/functions/_shared/extraction/types.ts). */
+export type RawExtraction = {
+  status: 'done' | 'not_available' | 'failed'
+  provider: string
+  message?: string
+  doc_number?: RawField
+  doc_date?: RawField
+  vendor_name?: RawField
+  customer_name?: RawField
+  totals?: { total?: RawField; currency?: string | null }
 }

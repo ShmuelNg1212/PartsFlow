@@ -12,8 +12,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { AttachDocument } from '@/features/documents/AttachDocument'
 import { CounterpartyField } from '@/features/documents/CounterpartyField'
+import { DocumentViewer } from '@/features/documents/DocumentViewer'
 import { editableFrom, sameDraft, toSavePayload, type DraftState, type EditableLine } from '@/features/documents/draft'
+import { ExtractionBanner, FieldMark } from '@/features/documents/ExtractionBanner'
 import { LinesEditor } from '@/features/documents/LinesEditor'
 import { clearLocalDraft, readLocalDraft, writeLocalDraft, type LocalDraft } from '@/features/documents/localDraft'
 import { PostDialog } from '@/features/documents/PostDialog'
@@ -159,6 +162,9 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
     if (dirty) {
       const payload = toSavePayload(state)
       await saveDraft(doc.id, base.updatedAt, payload.header, payload.lines)
+      // Adopt the saved version now: if the post is refused (duplicate, stock), a retry must not save with a stale version.
+      const fresh = await reload()
+      if (fresh?.status === 'draft') applyServer(fresh)
     }
     const result = await postDocument(doc.id, idempotencyKey, overrideReason)
     clearLocalDraft(doc.id)
@@ -181,6 +187,7 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
 
   const setHeader = (patch: Partial<DraftState['header']>) => setState((s) => ({ ...s, header: { ...s.header, ...patch } }))
   const totalInvalid = state.header.total_amount.trim() !== '' && !isDecimalString(state.header.total_amount, 2)
+  const extracted = doc.extraction_status === 'done'
 
   return (
     <>
@@ -243,21 +250,31 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
         </div>
       )}
 
-      <section aria-label="Document details" className="mb-6 grid gap-4 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ExtractionBanner doc={doc} />
+      <div className={doc.file_path ? 'lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-6' : undefined}>
+      {doc.file_path ? (
+        <DocumentViewer path={doc.file_path} mime={doc.file_mime} className="mb-6 lg:sticky lg:top-4" />
+      ) : (
+        <AttachDocument documentId={doc.id} blocked={dirty} onDone={() => void reload()} />
+      )}
+      <div className="@container min-w-0">
+      <section aria-label="Document details" className="mb-6 grid gap-4 rounded-lg border border-border bg-card p-4 @md:grid-cols-2 @3xl:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="doc-number">Document number</Label>
           <Input id="doc-number" className="num text-base sm:text-sm" value={state.header.doc_number} onChange={(e) => setHeader({ doc_number: e.target.value })} />
-          {doc.raw_doc_number && doc.raw_doc_number !== state.header.doc_number && <p className="text-[11px] text-muted-foreground">Extracted: {doc.raw_doc_number}</p>}
+          <FieldMark raw={doc.raw_extraction?.doc_number} current={state.header.doc_number} extracted={extracted} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="doc-date">Document date</Label>
           <Input id="doc-date" type="date" className="text-base sm:text-sm" value={state.header.doc_date} onChange={(e) => setHeader({ doc_date: e.target.value })} />
-          {doc.raw_doc_date && <p className="text-[11px] text-muted-foreground">Extracted: {doc.raw_doc_date}</p>}
+          <FieldMark raw={doc.raw_extraction?.doc_date} current={state.header.doc_date} extracted={extracted} />
         </div>
-        <div className="space-y-1.5 sm:col-span-2">
+        <div className="space-y-1.5 @md:col-span-2">
           <Label htmlFor="doc-counterparty">{doc.direction === 'receipt' ? 'Supplier' : 'Customer'}</Label>
           <CounterpartyField id="doc-counterparty" direction={doc.direction} value={state.header.counterparty_id} onChange={(cp) => setHeader({ counterparty_id: cp })} />
-          {doc.raw_counterparty && <p className="text-[11px] text-muted-foreground">Extracted: {doc.raw_counterparty}</p>}
+          {doc.raw_counterparty && !state.header.counterparty_id && (
+            <p className="text-[11px] text-yellow-fg">On the document: {doc.raw_counterparty}. Select it, or add it with "+ Add".</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="doc-total">Document total ({shop.currency})</Label>
@@ -269,9 +286,13 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
             value={state.header.total_amount}
             onChange={(e) => setHeader({ total_amount: e.target.value })}
           />
-          {totalInvalid && <p className="text-xs text-red-fg">Enter a number with at most 2 decimals.</p>}
+          {totalInvalid ? (
+            <p className="text-xs text-red-fg">Enter a number with at most 2 decimals.</p>
+          ) : (
+            <FieldMark raw={doc.raw_extraction?.totals?.total} current={state.header.total_amount} extracted={extracted} />
+          )}
         </div>
-        <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+        <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-3">
           <Label htmlFor="doc-notes">Notes</Label>
           <Textarea id="doc-notes" rows={1} className="min-h-9 text-base sm:text-sm" value={state.header.notes} onChange={(e) => setHeader({ notes: e.target.value })} />
         </div>
@@ -293,6 +314,8 @@ function DraftWorkspace({ doc }: { doc: DocumentDetail }) {
           onCreateProduct={isOwner ? (line) => setCreatingFor(line) : undefined}
         />
       </section>
+      </div>
+      </div>
 
       {/* Action bar: sticky at the bottom, above the phone navigation. */}
       <div className="sticky bottom-16 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 md:bottom-0 lg:-mx-8 lg:px-8">

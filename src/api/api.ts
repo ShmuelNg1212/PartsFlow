@@ -154,7 +154,7 @@ export async function getDocument(id: string): Promise<DocumentDetail | null> {
       .from('documents')
       .select(
         `id, shop_id, direction, status, doc_number, doc_date, counterparty_id, total_amount::text, notes,
-         raw_doc_number, raw_doc_date, raw_counterparty, extraction_provider, extraction_status, file_path, file_mime,
+         raw_doc_number, raw_doc_date, raw_counterparty, raw_extraction, extraction_provider, extraction_status, file_path, file_mime,
          posted_at, reversed_at, reversal_reason, duplicate_override_reason, created_at, updated_at,
          counterparty:counterparties(id, name, kind),
          lines:document_lines(${LINE_COLUMNS})`,
@@ -306,4 +306,34 @@ export async function inviteMember(shopId: string, email: string, role: 'owner' 
 export async function importProducts(shopId: string, rows: object[]): Promise<{ inserted: number }> {
   const result = check(await supabase.rpc('import_products', { p_shop_id: shopId, p_rows: rows as unknown as Json }))
   return result as unknown as { inserted: number }
+}
+
+// --- Document files and extraction --------------------------------------------
+
+/** R-DOC-1: the original goes to private storage under {shop}/{document}/ and is never changed. */
+export async function uploadDocumentFile(shopId: string, documentId: string, file: File, type: string, name: string): Promise<void> {
+  const path = `${shopId}/${documentId}/${name}`
+  const { error } = await supabase.storage.from('documents').upload(path, file, { contentType: type, upsert: false })
+  if (error) throw { code: 'UPLOAD', message: error.message }
+  check(await supabase.from('documents').update({ file_path: path, file_mime: type, file_size: file.size }).eq('id', documentId).select('id'))
+}
+
+export type ExtractResult = { status: 'done' | 'not_available' | 'failed'; provider: string; lines_added: number; message: string | null }
+
+/** Reads the uploaded file on the server. The result is an untrusted draft (R-EXT-3). */
+export async function extractDocument(documentId: string): Promise<ExtractResult> {
+  const { data, error } = await supabase.functions.invoke('extract-document', { body: { document_id: documentId } })
+  if (error) {
+    const response = (error as { context?: Response }).context
+    const body = response ? await response.json().catch(() => null) : null
+    throw { code: 'EXTRACT', message: body?.error ?? error.message }
+  }
+  return data as ExtractResult
+}
+
+/** A short-lived link for viewing a private file. */
+export async function signedFileUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from('documents').createSignedUrl(path, 600)
+  if (error || !data) throw { code: 'STORAGE', message: error?.message ?? 'No link' }
+  return data.signedUrl
 }

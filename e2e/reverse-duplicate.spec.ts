@@ -57,6 +57,8 @@ test('a duplicate invoice needs an owner reason before it posts', async ({ page 
 
   await signIn(page, 'owner')
   await page.goto(`/inbox/${second}`)
+  // Unsaved edit: posting saves first; a refused post must not leave a stale version for the retry.
+  await page.getByLabel('Notes').fill('Second delivery, checked against the packing slip')
   await page.getByRole('button', { name: 'Review and post' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: 'Post', exact: true }).click()
