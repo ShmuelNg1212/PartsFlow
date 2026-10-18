@@ -47,6 +47,17 @@ Check the original beside the fields on desktop and above them on phone.
 Confirm each product and received quantity. A sample must not post automatically.
 Try an unrelated image without Azure credentials. Manual entry must remain available.
 
+For the new development Azure test, first complete the setup in [setup](setup.md#extraction-evaluation).
+Use the newly generated files outside the checkout. These are not canned demo results.
+Upload one synthetic PDF or JPEG. Check that the provider is Azure before you call it an actual read.
+Compare every field with the original and the reference answers. Correct errors before posting.
+Check the supplier for receipts and the customer for sales. Check brand and discounts by hand.
+Save the draft. Check that stock has not changed. Then select products and received quantities.
+Post once. Check Inventory and Overview. Reopen the document and check its stock movement.
+Try the three-page PDF. Automatic reading must stop and leave manual entry available.
+Repeat with an unsupported photo format and a poor image. Check the explanation and correction path.
+Record failures and missing or extra lines. Synthetic tests do not prove real-shop accuracy.
+
 ## Phone and pilot record
 
 Repeat the first stock flow on a real phone.

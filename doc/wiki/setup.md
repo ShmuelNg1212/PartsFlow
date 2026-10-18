@@ -164,10 +164,40 @@ Do not run a forced dependency downgrade as part of host setup.
 
 ## Extraction evaluation
 
-Azure evaluation is not done. It needs credentials and representative invoices that the shop agrees to share.
-Use `scripts/eval-extraction.ts` with a folder containing invoices and `truth.json`.
-The script writes `evaluation.md` and `evaluation.json` in that folder.
-Keep real invoices and evaluation output outside Git.
+Actual Azure evaluation is not done. The development extraction work is on `feat/real-invoice-extraction`.
+Its local adapter uses free-tier limits: 4,000,000 bytes and two PDF pages.
+It reads JPEG, PNG, and PDF only. Other accepted uploads remain available for manual entry.
+It checks file bytes against the supplied type before sending them. It checks PDF page count with pinned `pdf-lib`.
+The function's `deno.json` pins the same dependency for Edge deployment.
+The adapter rejects unreadable PDFs and multiple detected invoices. It preserves the original file.
+These changes are not deployed to either hosted function yet.
+
+Start with a Document Intelligence resource on Free F0. Stop if that tier is unavailable.
+See Microsoft's [resource setup guide](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/create-document-intelligence-resource?view=doc-intel-4.0.0).
+Store `AZURE_DOCINTEL_ENDPOINT` and `AZURE_DOCINTEL_KEY` in ignored `.env.azure.local`.
+Use file mode `0600`. Keep both settings server-side. Do not send the key through chat.
+Configure only the development function before the development test. Production changes need a separate release.
+
+Generate new synthetic test documents outside the checkout:
+
+```sh
+node scripts/make-extraction-cases.mjs /private/tmp/partsflow-extraction-cases
+node --env-file=.env.azure.local scripts/eval-extraction.ts /private/tmp/partsflow-extraction-cases
+```
+
+The generator uses Playwright Chromium. It does not change the canned demo samples.
+It writes six labelled PDF and photo cases, source HTML, and `truth.json`.
+The evaluation command sends the supplied files to Azure. Use permitted documents only.
+The manifest has `schema_version: 1`, an explicit `synthetic` boolean, and `cases`.
+Each case has `file`, `mime_type`, `direction`, and `truth`.
+Legacy case arrays need `--synthetic` or `--real`.
+The script writes `evaluation.md`, `evaluation.json`, and `extraction-results.json` beside the inputs.
+Failed and omitted reads remain in the denominators. Extra and missing lines are reported.
+Exact product codes stay distinct. Normalized text results are separate.
+Known absent fields are separate from present-field accuracy. Unspecified reference fields are unscored.
+The report states that the adapter does not extract brand or line discounts. Check these manually.
+Synthetic results do not establish real-shop accuracy. Later, use invoices the shop agrees to share.
+Keep invoice inputs, reference answers, and raw evaluation output outside Git.
 
 ## Security advisor record (2026-10-18)
 

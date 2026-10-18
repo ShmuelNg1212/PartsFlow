@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { azureExtractor, mapAzureInvoice } from './azure'
 import { normalizeDecimal } from './types'
 import fixture from './fixtures/azure-invoice-2024-11-30.json'
+import { PDFDocument } from 'pdf-lib'
+
+const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])
 
 // T4.4: mapping of the documented prebuilt-invoice response (api-version 2024-11-30) into raw fields.
 
@@ -67,9 +70,72 @@ describe('mapAzureInvoice', () => {
   it('reports a response without a document as failed', () => {
     expect(mapAzureInvoice({ status: 'succeeded', analyzeResult: { documents: [] } }).status).toBe('failed')
   })
+
+  it('R-DOC-3: refuses multiple invoices rather than silently dropping every invoice after the first', () => {
+    const multi = structuredClone(fixture)
+    multi.analyzeResult.documents.push(multi.analyzeResult.documents[0]!)
+    expect(mapAzureInvoice(multi)).toMatchObject({ status: 'failed', message: expect.stringMatching(/multiple invoices/i) })
+  })
 })
 
 describe('azureExtractor', () => {
+  it('R-DOC-1: does not trust an image MIME label on a three-page PDF', async () => {
+    const pdf = await PDFDocument.create()
+    for (let i = 0; i < 3; i++) pdf.addPage()
+    let requests = 0
+    const ex = azureExtractor({ endpoint: 'https://x.test', key: 'k', fetch: async () => { requests++; return new Response(null, { status: 401 }) } })
+    expect(await ex.extract(await pdf.save(), 'image/jpeg')).toMatchObject({ status: 'failed', message: expect.stringMatching(/contents.*type/) })
+    expect(requests).toBe(0)
+  })
+  it('R-DOC-1: sends an intact two-page PDF and keeps an unreadable PDF out of Azure', async () => {
+    const pdf = await PDFDocument.create()
+    pdf.addPage()
+    pdf.addPage()
+    const file = await pdf.save()
+    const sent: ArrayBuffer[] = []
+    const ex = azureExtractor({ endpoint: 'https://x.test', key: 'k', pollMs: 1, fetch: async (_url, init) => {
+      if (init?.method === 'POST') {
+        sent.push(init.body as ArrayBuffer)
+        return new Response(null, { status: 202, headers: { 'operation-location': 'https://x.test/op' } })
+      }
+      return new Response(JSON.stringify(fixture))
+    } })
+    expect((await ex.extract(file, 'application/pdf')).status).toBe('done')
+    expect(new Uint8Array(sent[0]!)).toEqual(file)
+    expect(await ex.extract(new TextEncoder().encode('%PDF-broken'), 'application/pdf')).toMatchObject({ status: 'failed', message: expect.stringMatching(/PDF could not be checked/) })
+    expect(sent).toHaveLength(1)
+  })
+
+  it('R-DOC-9: does not submit an empty image as an invoice', async () => {
+    let requests = 0
+    const ex = azureExtractor({ endpoint: 'https://x.test', key: 'k', fetch: async () => { requests++; return new Response(null, { status: 401 }) } })
+    expect(await ex.extract(new Uint8Array(), 'image/png')).toMatchObject({ status: 'failed', message: expect.stringMatching(/empty/i) })
+    expect(requests).toBe(0)
+  })
+  it('R-DOC-1: refuses a three-page PDF instead of silently reading only the first two pages', async () => {
+    const pdf = await PDFDocument.create()
+    for (let i = 0; i < 3; i++) pdf.addPage()
+    let requests = 0
+    const ex = azureExtractor({ endpoint: 'https://x.test', key: 'k', fetch: async () => { requests++; return new Response(null, { status: 401 }) } })
+    expect(await ex.extract(await pdf.save(), 'application/pdf')).toMatchObject({ status: 'not_available', message: expect.stringMatching(/two pages/) })
+    expect(requests).toBe(0)
+  })
+
+  it('R-DOC-1: rejects files above the F0 size limit before sending any bytes', async () => {
+    let requests = 0
+    const ex = azureExtractor({ endpoint: 'https://x.test', key: 'k', fetch: async () => { requests++; return new Response(null, { status: 401 }) } })
+    expect(await ex.extract(new Uint8Array(4 * 1024 * 1024 + 1), 'image/png')).toMatchObject({ status: 'not_available', message: expect.stringMatching(/4 MB/) })
+    expect(requests).toBe(0)
+  })
+
+  it('R-DOC-9: keeps unsupported phone images available for manual entry without sending them to Azure', async () => {
+    let requests = 0
+    const ex = azureExtractor({ endpoint: 'https://x.test', key: 'k', fetch: async () => { requests++; return new Response(null, { status: 401 }) } })
+    const result = await ex.extract(new Uint8Array([1]), 'image/webp')
+    expect(result).toMatchObject({ status: 'not_available', message: expect.stringMatching(/JPEG.*PNG.*PDF/) })
+    expect(requests).toBe(0)
+  })
+
   it('posts the file, polls the operation, and maps the result', async () => {
     const calls: string[] = []
     const fake = async (url: string, init?: RequestInit) => {
@@ -78,14 +144,14 @@ describe('azureExtractor', () => {
       return new Response(JSON.stringify(calls.length < 3 ? { status: 'running' } : fixture), { status: 200 })
     }
     const ex = azureExtractor({ endpoint: 'https://x.test/', key: 'k', fetch: fake, pollMs: 1 })
-    const result = await ex.extract(new Uint8Array([1, 2, 3]), 'application/pdf')
+    const result = await ex.extract(png, 'image/png')
     expect(calls[0]).toBe('POST https://x.test/documentintelligence/documentModels/prebuilt-invoice:analyze?api-version=2024-11-30')
     expect(result.status).toBe('done')
   })
 
   it('fails cleanly when Azure refuses or takes too long', async () => {
     const refused = azureExtractor({ endpoint: 'https://x.test', key: 'k', fetch: async () => new Response('no', { status: 401 }), pollMs: 1 })
-    expect(await refused.extract(new Uint8Array(), 'image/png')).toMatchObject({ status: 'failed' })
+    expect(await refused.extract(png, 'image/png')).toMatchObject({ status: 'failed' })
     const slow = azureExtractor({
       endpoint: 'https://x.test',
       key: 'k',
@@ -96,6 +162,6 @@ describe('azureExtractor', () => {
       pollMs: 1,
       timeoutMs: 20,
     })
-    expect(await slow.extract(new Uint8Array(), 'image/png')).toMatchObject({ status: 'failed', message: expect.stringMatching(/too long/) })
+    expect(await slow.extract(png, 'image/png')).toMatchObject({ status: 'failed', message: expect.stringMatching(/too long/) })
   })
 })

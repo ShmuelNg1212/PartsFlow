@@ -178,6 +178,10 @@ Concurrent duplicate copies need an override. Line edits serialize with posting.
 The separate demo shop has synthetic products and three sample invoices.
 The demo extractor reads only those sample hashes. It is labelled.
 The Azure adapter and evaluation script exist. Azure evaluation is not done.
+Development extraction work adds free-tier input checks and complete evaluation reports.
+The local adapter rejects mismatched file types, files above 4 MB, and PDFs above two pages.
+It reads JPEG, PNG, and PDF. Other uploads keep the manual-entry path.
+These adapter changes are not deployed yet. Actual Azure extraction and real-shop accuracy remain unverified.
 Owner exports include raw pilot measurements. No real-shop pilot result has been measured.
 
 Remaining limits:
