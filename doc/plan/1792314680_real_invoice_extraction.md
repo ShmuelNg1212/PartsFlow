@@ -57,7 +57,7 @@ No actual hosted OCR call ran. Its setup wizard and provider-specific study were
   - Acceptance: field values have source evidence. Unknown fields remain null or clearly unresolved. The report states the supported synthetic layouts and limits.
   - Complete when the mapper tests pass and a measured PaddleOCR report is saved. Real-shop accuracy remains unknown.
 
-- [ ] P3. Connect the local app through an authenticated bridge. **tests: first**.
+- [x] P3. Connect the local app through an authenticated bridge. **tests: first**.
   - Done: loopback worker `ocr/worker.py` with internal bearer token, byte limit before reading, MIME check, one read at a time (503 while busy), page-complete reads, and `/health`. 10 pytest tests. Limits: 10 MB and 5 pages; client timeout 120 s, from P1 timings (21.9 s for 3 pages).
   - Reuse the existing extraction handler and Extractor interface. Keep privileged writes server-side.
   - Test the bridge request interface for expired sessions, another shop, non-drafts, invalid file paths, production configuration, and unavailable OCR.
@@ -68,7 +68,7 @@ No actual hosted OCR call ran. Its setup wizard and provider-specific study were
   - Acceptance: an authenticated local user can upload a synthetic document and receive a PaddleOCR draft through the current workspace.
   - Complete when bridge access tests pass and the development app shows the correct provider with server-side raw persistence.
 
-- [ ] P4. Verify the complete document flow. **tests: alongside**.
+- [x] P4. Verify the complete document flow. **tests: alongside**.
   - Run one Playwright process at a time. Exercise local OCR through actual authenticated development uploads on desktop and phone layouts.
   - Upload a generated PDF and a photo. Compare the fields to the originals. Correct the lines, choose products, and confirm received quantities.
   - Save and reopen the draft. Prove stock stays unchanged until posting.
@@ -126,6 +126,24 @@ Generated cases: 6 of 6 read; 8 of 10 lines. Both missing lines are from the poo
 Demo samples: 3 of 3 read; 12 of 12 lines. Part number, quantity, unit, unit price, amount, total, number, date and currency match 100%. Descriptions match 10 of 12; the two misses are OCR character errors.
 The demo samples were held out for the first run, which found no lines. The mapper was fixed after that run. They are not an independent test now.
 Limits: one table per page with a "Description" header; labelled header values in English; ISO dates only; no supplier without a label; no rotated or poor photos. Real-shop accuracy is unknown.
+
+## P3 evidence
+
+Bridge: `scripts/ocr-bridge.ts` with logic in `scripts/ocr-bridge-lib.ts`. It calls `handleExtract` unchanged. Tests: `test/unit/ocr-bridge.test.ts`, 18 tests, written before the code.
+- D9. No Supabase secret key is used. `.env.local` has none. Sessions are checked by Supabase Auth with the publishable key. Storage downloads run with the user's own token, so storage policies apply. Document, membership and `apply_extraction` calls use the existing development `SUPABASE_DB_URL`.
+- Startup refuses any project ref, Supabase URL or database URL other than `urljzpqigvtoooitwjrd`. It refuses a worker token under 32 characters and a non-loopback worker URL.
+- The bridge binds to 127.0.0.1:8766. It accepts browser origins `http://localhost:5173` and `http://127.0.0.1:5173` only. Request bodies above 1 KB are refused.
+- The frontend uses the bridge only when `import.meta.env.DEV` and `VITE_LOCAL_OCR=true`. Vite proxies `/local-ocr` in the dev server only. Production builds with and without `VITE_LOCAL_OCR=true` contain no `local-ocr` text.
+
+## P4 evidence
+
+Spec: `e2e/local-ocr.spec.ts`. It runs only with `LOCAL_OCR_E2E=1` and the worker, bridge and `VITE_LOCAL_OCR=true` dev server running. One Playwright process ran at a time.
+Passed on desktop and phone layouts against hosted development, with actual PaddleOCR:
+- Generated PDF: provider label `paddleocr-local`; document number, both descriptions, part numbers, quantity and price read. Received quantity stayed empty. Stock stayed 0 after save and reload. Posting gave +3 and +2. A second `post_document` call made no new movement (2 movements). Inventory and stock history show the receipt.
+- Phone photo: description, part number and quantity read.
+Passed on desktop: poor rotated photo gives document number only and manual entry works; three-page PDF gives exactly one line; with the worker stopped, the draft says the scanner is not running and manual entry works.
+Not covered in the browser: an unsupported file type (the file picker filters it; the worker refuses it with 422 in `test_worker.py`). The Overview page was not asserted. No real phone was available, so the real camera was not tested.
+Two test-only fixes: the app shows `125.5` for the stored value 125.50, so the test compares the value; the product-picker helper counts unpicked lines, so line 2 is picked first.
 
 ## Rendezvous
 
