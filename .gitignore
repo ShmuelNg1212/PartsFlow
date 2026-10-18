@@ -8,3 +8,7 @@ playwright-report/
 test-results/
 supabase/.temp/
 .vite/
+
+!.env.production.example
+.wrangler/
+.dev.vars*

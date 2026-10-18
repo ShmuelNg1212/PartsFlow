@@ -15,7 +15,12 @@
     "test": "vitest run --project unit",
     "test:db": "vitest run --project db",
     "test:all": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:production": "node --env-file-if-exists=.env.production.local scripts/check-production-env.mjs && npm run build",
+    "preview:cloudflare": "wrangler dev --local --port 8787",
+    "deploy": "npm run build:production && wrangler deploy",
+    "deploy:check": "wrangler deploy --dry-run",
+    "rollback": "wrangler rollback"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",
@@ -62,6 +67,7 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.2",
     "vite": "8.3.4",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "wrangler": "4.151.1"
   }
 }

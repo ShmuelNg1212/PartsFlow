@@ -29,6 +29,14 @@ Warm monochrome surfaces keep stock state readable. Semantic badges use muted co
 The phone layout uses stacked line cards and bottom navigation.
 The workspace action bar sits above navigation and its safe area.
 
+## Frontend host
+
+Cloudflare Workers Static Assets serves the compiled Vite files.
+Existing assets bypass the Worker handler.
+A small handler serves the app for unmatched client routes and keeps missing file responses at 404.
+Supabase still owns Auth, data, private files, and extraction.
+Production build variables are explicit. The local host runtime loads no backend secrets.
+
 ## Extraction and private files
 
 Original uploads use a private Storage bucket and a shop/document path.

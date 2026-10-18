@@ -80,14 +80,72 @@ Real-device keyboard, safe-area, and touch checks are still required.
 
 ## Build, deployment, and rollback
 
-Build command: `npm run build`. Output directory: `dist`.
-The app refuses to start if the browser Supabase configuration is missing.
-The build alone does not prove that the host variables are correct.
-The host is not selected. Deploy and rollback commands are not set.
-Before shipping, record those commands here and run the tests with the host build variables.
-Configure an SPA fallback: unknown application paths must return `index.html`. Static assets must keep their normal 404 response.
-Record the previous main commit in the release plan before a push.
-Verify a version-specific marker on the live site after deployment.
+Cloudflare Workers Static Assets is the selected frontend host (human decision, 2026-10-18).
+Supabase remains the backend. The Cloudflare account, production URL, and domain are not configured yet.
+The Worker name in `wrangler.jsonc` is `partsflow`. Change it if the account already uses that name.
+Wrangler is pinned in the lockfile. Use the local npm commands below.
+
+### Production configuration
+
+Copy `.env.production.example` to ignored `.env.production.local` for local release builds.
+Set the production project's `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
+In Cloudflare Builds, set these as build variables. Runtime Worker variables do not configure the compiled browser app.
+The production preflight requires explicit values. It does not fall back to the development `.env.local`.
+It checks an HTTPS origin and a publishable-key format. It rejects server secrets. It does not verify account access.
+Keep production data out of the development project.
+
+Build command: `npm run build:production`. Output directory: `dist`.
+Use `npm run build` for local development checks against the development project.
+The browser still checks its configuration at startup. A successful build is not proof of sign-in or database access.
+
+### Local host checks
+
+```sh
+npm run build
+npm run deploy:check
+npm run preview:cloudflare
+```
+
+The dry run packages the Worker without publishing it.
+The preview uses Cloudflare's local runtime on `http://localhost:8787`.
+In another terminal, run `node scripts/check-cloudflare-routes.mjs`.
+Check sign-in and a saved draft through that local server before a release.
+
+Existing assets are served directly. A small Worker handles unmatched routes.
+It serves `index.html` for app routes. Missing file paths return 404.
+The default global SPA fallback was tested and returned HTML for missing scripts, so it is not used.
+Unmatched routes invoke Worker code and count toward the Worker request allowance.
+The Worker has only an asset binding. It needs no backend secrets.
+An empty `secrets.required` list prevents local database and test credentials from becoming runtime bindings.
+
+### Deployment and rollback
+
+Authentication command: `npx wrangler login`.
+Account check: `npx wrangler whoami`.
+Deployment command, after the human says ship: `npm run deploy`.
+This runs the production preflight, builds the app, and deploys it.
+For Cloudflare Builds, use `npm run build:production` as the build command and `npx wrangler deploy` as the deploy command.
+Connecting a repository with Save and Deploy publishes it. Do this only in an authorized release.
+If main is connected later, a push to main deploys it. Keep each push within the approved release scope.
+
+Record the previous main commit and Cloudflare version ID in the release plan before a release.
+List deployed versions with `npx wrangler versions list`.
+Rollback command: `npm run rollback -- <previous-version-id>`.
+A Worker rollback does not reverse database migrations or stock movements.
+Before shipping, run the tests with the host build variables.
+Verify a marker unique to the release on the live site after deployment.
+Also verify a direct document link, authenticated stock access, a draft write, and a missing static file.
+Configure the final origin in Supabase Auth and `APP_ORIGINS` before testing real invites.
+
+Host references: [Workers static assets](https://developers.cloudflare.com/workers/static-assets/get-started/),
+[Worker routing](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/),
+and [rollback](https://developers.cloudflare.com/workers/versions-and-deployments/rollbacks/).
+
+Preparation check (2026-10-18): 83 unit tests pass. Local Cloudflare navigation and missing-asset checks pass.
+Wrangler dry run, build, TypeScript, and lint pass. A staff user signed in, saved a draft, and reloaded its deep link through the local Cloudflare server. These browser checks used the development test shop.
+The production build correctly stops when its explicit values are missing. Real production configuration and live deployment are not verified.
+The npm audit lists seven existing high-severity entries in the shadcn CLI dependency chain; none are in Wrangler.
+Do not run a forced dependency downgrade as part of host setup. Review that chain before a production release.
 
 ## Extraction evaluation
 

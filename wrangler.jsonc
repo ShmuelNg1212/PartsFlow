@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "partsflow",
+  "compatibility_date": "2026-10-18",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "none"
+  },
+  "main": "cloudflare/worker.js",
+  "secrets": {
+    "required": []
+  }
+}
