@@ -8,4 +8,8 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  // Development only: the local PaddleOCR bridge (scripts/ocr-bridge.ts). Not part of any build.
+  server: {
+    proxy: { '/local-ocr': { target: 'http://127.0.0.1:8766', rewrite: (path) => path.replace(/^\/local-ocr/, '') } },
+  },
 })

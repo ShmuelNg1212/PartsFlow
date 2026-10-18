@@ -1,5 +1,4 @@
 import { defineConfig, devices } from '@playwright/test'
-// @ts-expect-error -- plain ESM helper without types
 import { loadEnvLocal } from './scripts/db-config.mjs'
 
 // Workflow tests run against the hosted dev project (real Auth, PostgREST, Realtime).

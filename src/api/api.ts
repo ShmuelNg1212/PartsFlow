@@ -326,8 +326,13 @@ export async function uploadDocumentFile(shopId: string, documentId: string, fil
 
 export type ExtractResult = { status: 'done' | 'not_available' | 'failed'; provider: string; lines_added: number; message: string | null }
 
+// Development only: VITE_LOCAL_OCR=true sends reads to the local PaddleOCR bridge (plan P3).
+// import.meta.env.DEV is false in production builds, so this path is removed from them.
+const LOCAL_OCR = import.meta.env.DEV && import.meta.env.VITE_LOCAL_OCR === 'true'
+
 /** Reads the uploaded file on the server. The result is an untrusted draft (R-EXT-3). */
 export async function extractDocument(documentId: string): Promise<ExtractResult> {
+  if (LOCAL_OCR) return extractLocally(documentId)
   const { data, error } = await supabase.functions.invoke('extract-document', { body: { document_id: documentId } })
   if (error) {
     const response = (error as { context?: Response }).context
@@ -335,6 +340,18 @@ export async function extractDocument(documentId: string): Promise<ExtractResult
     throw { code: 'EXTRACT', message: body?.error ?? error.message }
   }
   return data as ExtractResult
+}
+
+async function extractLocally(documentId: string): Promise<ExtractResult> {
+  const { data } = await supabase.auth.getSession()
+  const res = await fetch('/local-ocr/extract', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${data.session?.access_token ?? ''}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ document_id: documentId }),
+  }).catch(() => null)
+  const body = res ? await res.json().catch(() => null) : null
+  if (!res?.ok) throw { code: 'EXTRACT', message: body?.error ?? 'The local scanner is not running. Enter the lines by hand.' }
+  return body as ExtractResult
 }
 
 /** A short-lived link for viewing a private file. */

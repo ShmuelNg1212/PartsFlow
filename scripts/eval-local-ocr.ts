@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { evaluateExtractions, type EvaluationCase, type EvaluationRead } from '../supabase/functions/_shared/extraction/evaluation.ts'
 import { localPaddleExtractor, workerReader } from '../supabase/functions/_shared/extraction/paddle.ts'
-import Decimal from 'decimal.js'
+import { Decimal } from 'decimal.js'
 import { SAMPLE_INVOICES } from './demo-data.mjs'
 
 const dir = process.argv[2] ?? '/private/tmp/partsflow-extraction-cases'
