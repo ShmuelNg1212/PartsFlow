@@ -1,22 +1,47 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
-import { keys, listDocuments, listLowStock } from '@/api/api'
+import { keys, listDocuments, listLowStock, recordedSales } from '@/api/api'
 import { PageHeader } from '@/components/app/PageHeader'
 import { EmptyState, ErrorState, LoadingState } from '@/components/app/states'
 import { DocStatusBadge } from '@/components/app/StatusBadge'
-import { formatQty } from '@/lib/decimal'
+import { formatMoney, formatQty } from '@/lib/decimal'
 import { directionNoun, formatDateTime } from '@/lib/format'
+import { todayIn } from '@/lib/today'
 import { useShop } from '@/shop/ShopProvider'
 
 export function OverviewPage() {
   const { shop } = useShop()
   const drafts = useQuery({ queryKey: keys.documents(shop.id, 'drafts'), queryFn: () => listDocuments(shop.id, 'drafts', 10) })
   const low = useQuery({ queryKey: [...keys.overview(shop.id), 'low'], queryFn: () => listLowStock(shop.id) })
+  const day = todayIn(shop.timezone)
+  const sales = useQuery({ queryKey: [...keys.overview(shop.id), 'sales', day], queryFn: () => recordedSales(shop.id, day) })
   const recent = useQuery({ queryKey: [...keys.overview(shop.id), 'recent'], queryFn: () => listDocuments(shop.id, 'posted', 8) })
 
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader title={shop.name} description="What needs attention today." />
+      <section aria-label="Recorded sales today" className="mb-6 rounded-lg border border-border bg-card px-4 py-4">
+        <p className="text-sm text-muted-foreground">Recorded sales today</p>
+        {sales.isPending ? (
+          <LoadingState rows={1} />
+        ) : sales.isError ? (
+          <ErrorState error={sales.error} onRetry={() => sales.refetch()} />
+        ) : (
+          <>
+            <p className="num mt-1 text-3xl">{formatMoney(sales.data.total, sales.data.currency)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {sales.data.documents} posted {sales.data.documents === 1 ? 'sale' : 'sales'} on {sales.data.day} ({shop.timezone}). Quantity × price − discount of
+              recorded sale documents. Not cash received and not profit.
+              {sales.data.lines_without_price > 0 && (
+                <span className="text-yellow-fg">
+                  {' '}
+                  {sales.data.lines_without_price} {sales.data.lines_without_price === 1 ? 'line has' : 'lines have'} no price and count as 0.
+                </span>
+              )}
+            </p>
+          </>
+        )}
+      </section>
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Waiting for review" link={{ to: '/inbox', label: 'All drafts' }}>
           {drafts.isPending ? (

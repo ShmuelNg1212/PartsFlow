@@ -8,6 +8,7 @@ import { InventoryPage } from '@/routes/InventoryPage'
 import { NotFoundPage } from '@/routes/NotFoundPage'
 import { OverviewPage } from '@/routes/OverviewPage'
 import { ProductPage } from '@/routes/ProductPage'
+import { SetPasswordPage } from '@/routes/SetPasswordPage'
 import { SettingsPage } from '@/routes/SettingsPage'
 import { SignInPage } from '@/routes/SignInPage'
 
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
   {
     Component: RequireAuth,
     children: [
+      { path: 'set-password', Component: SetPasswordPage },
       {
         Component: AppShell,
         children: [

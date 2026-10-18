@@ -265,3 +265,38 @@ export async function listDocumentMovements(documentId: string): Promise<Documen
   )
   return (rows ?? []) as DocumentMovement[]
 }
+
+// --- Overview and settings ---------------------------------------------------
+
+export type RecordedSales = { day: string; currency: string; total: string; documents: number; lines_without_price: number }
+
+export async function recordedSales(shopId: string, day: string): Promise<RecordedSales> {
+  const result = check(await supabase.rpc('recorded_sales', { p_shop_id: shopId, p_day: day }))
+  return result as unknown as RecordedSales
+}
+
+export type Member = { user_id: string; email: string; role: 'owner' | 'staff'; created_at: string; last_sign_in_at: string | null }
+
+export async function listMembers(shopId: string): Promise<Member[]> {
+  const rows = check(await supabase.rpc('list_members', { p_shop_id: shopId }))
+  return (rows ?? []) as Member[]
+}
+
+export async function updateShop(shopId: string, input: { name: string; currency: string; timezone: string }): Promise<void> {
+  const rows = check(await supabase.from('shops').update(input).eq('id', shopId).select('id'))
+  if (!rows || rows.length === 0) throw { code: '42501', message: 'Only an owner can change settings.' }
+}
+
+export type InviteResult = { status: 'invited' | 'added'; email: string; role: 'owner' | 'staff' }
+
+/** Calls the invite-member Edge Function; the secret key stays on the server (R-DATA-6). */
+export async function inviteMember(shopId: string, email: string, role: 'owner' | 'staff'): Promise<InviteResult> {
+  const { data, error } = await supabase.functions.invoke('invite-member', { body: { shop_id: shopId, email, role } })
+  if (error) {
+    // FunctionsHttpError carries the response; surface the function's own message.
+    const response = (error as { context?: Response }).context
+    const body = response ? await response.json().catch(() => null) : null
+    throw { code: response?.status === 403 ? '42501' : 'INVITE', message: body?.error ?? error.message }
+  }
+  return data as InviteResult
+}

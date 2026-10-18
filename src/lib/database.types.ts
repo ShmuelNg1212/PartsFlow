@@ -685,6 +685,20 @@ export type Database = {
         }
         Returns: Json
       }
+      recorded_sales: {
+        Args: { p_day: string; p_shop_id: string }
+        Returns: Json
+      }
+      list_members: {
+        Args: { p_shop_id: string }
+        Returns: {
+          user_id: string
+          email: string
+          role: string
+          created_at: string
+          last_sign_in_at: string | null
+        }[]
+      }
       search_products: {
         Args: { p_query: string; p_shop_id: string }
         Returns: {
