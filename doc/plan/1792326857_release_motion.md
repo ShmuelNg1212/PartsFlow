@@ -22,3 +22,9 @@ Date: 2026-10-18. Mode: design. The human said "ship it".
 ## Checks
 
 - [x] With the production `VITE_` build variables: `npm test` 126 pass, lint and typecheck clean, `npm run build:production` passes. The database tests were not run with the production file, because they could write to the production database.
+- [x] Pushed `98a225b..9aa912f` to `origin/main`.
+- [x] Deployed. Active Worker version: `898536d7-c7df-4a99-8d1b-b17c8e09a1cd`.
+- [x] Live marker: `/assets/index-BObraWEy.css` contains `.motion-page`, `--motion-ease-out`, and `progress-slide`. Its SHA256 matches `dist`. Deep link `/inbox` returns 200.
+- [x] Signed-in live check at 390 px with the demo owner: a move from Overview to Inventory ran an `opacity` and `transform` entrance on the new page. The demo banner showed. Nothing was written.
+
+The plan is frozen after these checks.
