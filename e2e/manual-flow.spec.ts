@@ -19,7 +19,13 @@ test('owner receives 5, sells 2, and sees 3 on hand with both movements', async 
   await visible(page.getByLabel('Line 1 description')).fill(description)
   await visible(page.getByLabel('Line 1 invoice quantity')).fill('5')
   await visible(page.getByLabel('Line 1 received quantity')).fill('5')
+  await visible(page.getByLabel('Line 1 price', { exact: true })).fill('10')
+  await visible(page.getByLabel('Line 1 discount', { exact: true })).fill('1.25')
   await pickProduct(page, 1, sku)
+  await page.getByRole('button', { name: /Save draft/ }).click()
+  await expect(page.getByText('All changes saved')).toBeVisible()
+  await page.reload()
+  await expect(visible(page.getByLabel('Line 1 discount', { exact: true }))).toHaveValue('1.25')
   await postDraft(page, /\+5 pc/)
   await expect(page.getByText('+5 pc')).toBeVisible()
 

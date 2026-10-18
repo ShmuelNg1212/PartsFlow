@@ -17,7 +17,7 @@ type Props = {
   onCreateProduct?: (line: EditableLine) => void
 }
 
-type Field = 'description' | 'part_number' | 'quantity' | 'unit' | 'received_quantity' | 'conversion_factor' | 'unit_price'
+type Field = 'description' | 'part_number' | 'quantity' | 'unit' | 'received_quantity' | 'conversion_factor' | 'unit_price' | 'discount'
 
 /** R-DOC-4, R-DOC-5: the raw extracted value when it differs, and uncertain or missing fields. */
 function RawHint({ line, field }: { line: EditableLine; field: string }) {
@@ -117,6 +117,7 @@ export function LinesEditor({ direction, lines, onChange, counterpartyId, showIs
               {receipt && <th className="w-24 px-2 py-2 font-medium">Received</th>}
               {anyFactor && <th className="w-24 px-2 py-2 font-medium">Base per unit</th>}
               <th className="w-24 px-2 py-2 font-medium">Price</th>
+              <th className="w-24 px-2 py-2 font-medium">Discount</th>
               <th className="min-w-56 px-2 py-2 font-medium">Product</th>
               <th className="w-10 px-2 py-2" />
             </tr>
@@ -138,6 +139,7 @@ export function LinesEditor({ direction, lines, onChange, counterpartyId, showIs
                     </td>
                   )}
                   <td className="px-2 py-1.5">{input(l, 'unit_price', { label: 'price', mono: true, decimal: true })}</td>
+                  <td className="px-2 py-1.5">{input(l, 'discount', { label: 'discount', mono: true, decimal: true })}</td>
                   <td className="px-2 py-1.5">
                     <ProductPicker
                       value={l.product}
@@ -220,6 +222,10 @@ export function LinesEditor({ direction, lines, onChange, counterpartyId, showIs
                     {input(l, 'unit_price', { label: 'price', mono: true, decimal: true, className: 'mt-1' })}
                   </label>
                 )}
+                <label className="block text-xs text-muted-foreground">
+                  Discount (line total)
+                  {input(l, 'discount', { label: 'discount', mono: true, decimal: true, className: 'mt-1' })}
+                </label>
                 <div className="col-span-2">
                   <p className="mb-1 text-xs text-muted-foreground">Product</p>
                   <ProductPicker
