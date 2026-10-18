@@ -110,7 +110,7 @@ Simplify and security-review are not installed. Earlier manual review covered pr
 
 ## Execution record
 
-The revised PaddleOCR work has not started. No Python packages or models were installed during study. No hosted settings changed.
+The local application integration has not started. No Python packages or models were installed during study. The human then installed the runtime and requested setup verification. See the smoke result below. No hosted settings changed.
 Untracked Finder `.DS_Store` files remain outside this change.
 
 ### Authorized provider cleanup
@@ -125,3 +125,16 @@ A scan found no retired-provider references in tracked working files. The old lo
 Standards review found no remaining rule violation. The explicit removal request authorizes the targeted changes to earlier records. Spec review confirmed removal of the provider, its setup, dependencies, and stale limits while retaining manual entry and generic evaluation. Simplify and security-review are not installed. Manual review confirmed that access checks and draft-only writes are unchanged.
 The cleanup stays on its feature branch because earlier local extraction work has not been approved to ship. No main merge, push, or deployment was made.
 The local PaddleOCR plan remains awaiting approval.
+
+### User-installed runtime verification
+
+The human installed PaddleOCR, PaddlePaddle, and the required PaddleX OCR extras in Anaconda. Verification used `/opt/anaconda3/bin/python`, Python 3.13.5. Installed versions are PaddleOCR 3.7.0, PaddlePaddle 3.3.1, and PaddleX 3.7.2.
+The default Homebrew Python is a different environment. Do not use it for this installation.
+The Paddle CPU runtime check passed. The first pipeline attempt identified missing OCR extras. After the human installed them, actual PP-StructureV3 inference succeeded.
+Optional formula, seal, and chart recognition were disabled. Document unwarping was disabled. CPU inference was used.
+Models are cached in `/private/tmp/partsflow-paddlex-cache`. Output and a measured smoke summary are in `/private/tmp/partsflow-paddle-smoke`.
+The clean synthetic input was `readable-invoice.pdf`. The pipeline returned one page. Initial load with downloads took 99.8 seconds. Prediction and result saving took 20.5 seconds.
+Recognized text includes `SYN-EVAL-101`, both reference part codes, the line quantities and prices, and total `1116.64`.
+The generated table omitted unit cells and shifted numeric columns. Do not map columns by position without validation. P2 must use source evidence and reject an ambiguous row.
+This proves local inference on one clean synthetic PDF only. It does not establish field accuracy across the six cases or real shop invoices.
+P1 remains open: an isolated, locked runtime and broader measurements are still required for the application integration. P2 through P5 remain unimplemented.
