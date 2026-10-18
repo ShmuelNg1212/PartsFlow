@@ -33,7 +33,7 @@ def serve(monkeypatch):
     servers = []
 
     def start(pipeline, limits=worker.Limits(max_bytes=1000, max_pages=5)):
-        monkeypatch.setattr(reader, "page_count", lambda data, mime: 1)
+        monkeypatch.setattr(reader, "page_sizes", lambda data, mime: [(100, 100)])
         server = worker.make_server("127.0.0.1", 0, TOKEN, lambda: pipeline, limits)
         threading.Thread(target=server.serve_forever, daemon=True).start()
         servers.append(server)
@@ -94,7 +94,7 @@ def test_rejects_unsupported_types(serve):
 
 def test_reports_an_incomplete_read_as_rejected(serve, monkeypatch):
     port = serve(FakePipeline(pages=1))
-    monkeypatch.setattr(reader, "page_count", lambda data, mime: 3)
+    monkeypatch.setattr(reader, "page_sizes", lambda data, mime: [(100, 100)] * 3)
     status, body = call(port)
     assert status == 422
     assert "1 of 3" in body["error"]

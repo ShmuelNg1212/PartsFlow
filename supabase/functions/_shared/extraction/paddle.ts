@@ -18,6 +18,9 @@ const PROVIDER = 'paddleocr-local'
 const LABEL_MIN_SCORE = 0.9
 const UNVERIFIED_CAP = 0.5
 const MAX_SLOPE = 0.18 // about 10 degrees
+const MAX_LINES = 500 // apply_extraction refuses more
+const MAX_TEXT_LINES = 5000
+const MAX_TEXT_LENGTH = 1000
 const POOR_LINE_SCORE = 0.8
 const POOR_PAGE_SHARE = 0.25
 
@@ -82,12 +85,16 @@ export function mapOcrDocument(doc: OcrDocument): ExtractionResult {
     return failed('Not every page was read. Enter the lines by hand.')
   }
   if (doc.pages.every((p) => p.lines.length === 0)) return failed('No text was found. Enter the lines by hand.')
+  // Bounds untrusted worker output before it reaches the privileged apply step.
+  const all = doc.pages.flatMap((p) => p.lines)
+  if (all.length > MAX_TEXT_LINES || all.some((l) => l.text.length > MAX_TEXT_LENGTH)) return failed('The document has too much text to read. Enter the lines by hand.')
 
   const headers = readLabels(doc.pages)
   if (headers === 'several') return failed('This file seems to hold more than one invoice. Upload one invoice per file.')
 
   const lines: ExtractedLine[] = []
   for (const page of doc.pages) if (!isPoor(page)) lines.push(...readTable(page))
+  if (lines.length > MAX_LINES) return failed(`The document has more than ${MAX_LINES} lines. Split it, or enter the lines by hand.`)
 
   const result: ExtractionDone = {
     status: 'done',

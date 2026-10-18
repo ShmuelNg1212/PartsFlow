@@ -27,6 +27,12 @@ class IncompleteRead(Exception):
 class Limits:
     max_bytes: int = 10 * 1024 * 1024
     max_pages: int = 5
+    # A small file can still decode to a huge bitmap. A4 at 300 dpi is about 8.7 MP.
+    max_pixels: int = 40_000_000
+
+
+# PaddleX renders PDF pages at 2x the 72 dpi point size.
+PDF_SCALE = 2
 
 
 def make_pipeline() -> Any:
@@ -46,14 +52,21 @@ def make_pipeline() -> Any:
     )
 
 
-def page_count(data: bytes, mime: str) -> int:
+def page_sizes(data: bytes, mime: str) -> list[tuple[float, float]]:
+    """Rendered width and height of each page, read from the file header only."""
     if mime != "application/pdf":
-        return 1
+        import io
+
+        from PIL import Image
+
+        Image.MAX_IMAGE_PIXELS = None  # the size check below replaces Pillow's warning
+        with Image.open(io.BytesIO(data)) as image:
+            return [image.size]
     import pypdfium2
 
     pdf = pypdfium2.PdfDocument(data)
     try:
-        return len(pdf)
+        return [(w * PDF_SCALE, h * PDF_SCALE) for w, h in (pdf[i].get_size() for i in range(len(pdf)))]
     finally:
         pdf.close()
 
@@ -64,11 +77,14 @@ def read_document(pipeline: Any, data: bytes, mime: str, limits: Limits = Limits
     if not data or len(data) > limits.max_bytes:
         raise UnsupportedInput("The file is empty or too large.")
     try:
-        expected = page_count(data, mime)
+        sizes = page_sizes(data, mime)
     except Exception as err:
         raise UnsupportedInput("The file could not be opened.") from err
+    expected = len(sizes)
     if expected < 1 or expected > limits.max_pages:
         raise UnsupportedInput(f"Use a document with 1 to {limits.max_pages} pages.")
+    if any(w * h > limits.max_pixels for w, h in sizes):
+        raise UnsupportedInput("A page is too large to read. Scan it at a normal size.")
 
     fd, path = tempfile.mkstemp(suffix=SUFFIX[mime])
     try:

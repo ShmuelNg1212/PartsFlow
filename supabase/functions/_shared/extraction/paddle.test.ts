@@ -166,6 +166,11 @@ describe('localPaddleExtractor safety rules', () => {
     expect(result.lines[0]!.part_number.value).toBeNull()
   })
 
+  it('fails cleanly above the 500-line limit of apply_extraction', async () => {
+    const rows = Array.from({ length: 501 }, (_, i) => row(560 + i * 40, ['Bolt', `B-${i}`, '1', 'pc', '1.00', '0.00', '1.00'])).flat()
+    expect(await extract({ page_count: 1, pages: [page([...header, ...rows])] })).toMatchObject({ status: 'failed' })
+  })
+
   it('accepts only ISO dates; an ambiguous day/month date stays null', async () => {
     const result = done(await extract({ page_count: 1, pages: [page([line('Invoice date: 03/04/2026', [57, 100, 300, 120])])] }))
     expect(result.doc_date.value).toBeNull()
@@ -196,6 +201,12 @@ describe('localPaddleExtractor safety rules', () => {
   it('refuses a partial read', async () => {
     const result = await extract({ page_count: 3, pages: [page([line('x', [0, 0, 10, 10])])] })
     expect(result).toMatchObject({ status: 'failed' })
+  })
+
+  it('refuses an oversized result instead of storing it', async () => {
+    const many = Array.from({ length: 5001 }, (_, i) => line(`t${i}`, [0, i, 10, i + 1]))
+    expect(await extract({ page_count: 1, pages: [page(many)] })).toMatchObject({ status: 'failed' })
+    expect(await extract({ page_count: 1, pages: [page([line('x'.repeat(1001), [0, 0, 10, 10])])] })).toMatchObject({ status: 'failed' })
   })
 
   it('reports a document with no text as not read', async () => {
