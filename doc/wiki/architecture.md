@@ -29,6 +29,23 @@ Warm monochrome surfaces keep stock state readable. Semantic badges use muted co
 The phone layout uses stacked line cards and bottom navigation.
 The workspace action bar sits above navigation and its safe area.
 
+## Motion
+
+Motion gives short state feedback only. Staff use the app all day, so most surfaces stay still.
+All motion is CSS in `src/index.css`. The app has no motion library.
+The curve tokens are `--motion-ease-out` and `--motion-ease-in-out`. Do not name them `--ease-out`: Tailwind utilities read that name.
+Entrances use `@starting-style` and play once on mount. Nothing has an exit animation, so the next action never waits.
+
+- `.motion-page`: each new path fades in and rises 4 px (180 ms). The wrapper in `AppShell` is keyed on the path, so filter and search changes do not replay it.
+- `.motion-enter`: inline alerts and banners fade in and drop 4 px (200 ms).
+- `.motion-enter-x`: steps in the new document dialog slide 6 px (180 ms).
+- `.motion-fade`: a line the user adds fades in (150 ms). Lines loaded with the document do not.
+- `.motion-progress`: an indeterminate bar while a document is read.
+
+The global reduced-motion rule makes every entrance instant. Under reduced motion, the progress bar fades in and out but does not move.
+These surfaces must not animate: pickers, selects, and menus (they open many times per document), skeleton-to-content swaps, the save status text, and lists (no stagger).
+`e2e/motion.spec.ts` reads the running transitions. It fails if `@starting-style` stops applying.
+
 ## Frontend host
 
 Cloudflare Workers Static Assets serves the compiled Vite files.
