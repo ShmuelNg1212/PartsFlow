@@ -25,6 +25,8 @@ declare
   v_short jsonb;
   v_first jsonb;
   v_count integer;
+  -- Validated lines: [{line_id, line_no, product_id, base_qty, description_norm, part_number_norm}].
+  v_lines jsonb := '[]'::jsonb;
 begin
   -- 1. Permission (R-ROLE-1). Look up the shop without a lock first, so a non-owner never waits on a lock.
   select * into v_doc from public.documents where id = p_document_id;
@@ -48,12 +50,6 @@ begin
   v_sign := case v_doc.direction when 'receipt' then 1 else -1 end;
 
   -- 3. Validate lines and compute base-unit quantities.
-  create temp table if not exists _post_lines (
-    line_id uuid, line_no integer, product_id uuid, base_qty numeric(14, 3),
-    description_norm text, part_number_norm text
-  ) on commit drop;
-  truncate _post_lines;
-
   select count(*) into v_count from public.document_lines where document_id = v_doc.id;
   if v_count = 0 then
     raise exception 'This document has no lines.' using errcode = 'PF003';
@@ -87,9 +83,11 @@ begin
       else
         v_factor := v_line.conversion_factor;
       end if;
-      insert into _post_lines values (
-        v_line.id, v_line.line_no, v_line.product_id, round(v_qty * v_factor, 3),
-        public.normalize_description(v_line.description), public.normalize_part_number(v_line.part_number));
+      v_lines := v_lines || jsonb_build_object(
+        'line_id', v_line.id, 'line_no', v_line.line_no, 'product_id', v_line.product_id,
+        'base_qty', round(v_qty * v_factor, 3),
+        'description_norm', public.normalize_description(v_line.description),
+        'part_number_norm', public.normalize_part_number(v_line.part_number));
     end;
   end loop;
 
@@ -120,7 +118,7 @@ begin
 
   -- 5. Lock balances in product order (no deadlocks), then check stock for sales (R-POST-7, R-POST-8).
   perform 1 from public.product_balances b
-  where b.product_id in (select product_id from _post_lines)
+  where b.product_id in (select l.product_id from jsonb_to_recordset(v_lines) as l(line_id uuid, line_no integer, product_id uuid, base_qty numeric, description_norm text, part_number_norm text))
   order by b.product_id
   for update;
 
@@ -129,7 +127,7 @@ begin
              'product_id', s.product_id, 'sku', p.sku, 'description', p.description,
              'on_hand', trim_scale(b.qty)::text, 'requested', trim_scale(s.qty)::text) order by p.sku), '[]'::jsonb)
       into v_short
-    from (select product_id, sum(base_qty) as qty from _post_lines group by product_id) s
+    from (select l.product_id, sum(l.base_qty) as qty from jsonb_to_recordset(v_lines) as l(line_id uuid, line_no integer, product_id uuid, base_qty numeric, description_norm text, part_number_norm text) group by l.product_id) s
     join public.product_balances b on b.product_id = s.product_id
     join public.products p on p.id = s.product_id
     where b.qty < s.qty;
@@ -142,7 +140,7 @@ begin
   end if;
 
   -- 6. Write movements, balances, status, aliases, and audit in this one transaction (R-POST-5).
-  for v_line in select * from _post_lines where base_qty <> 0 order by line_no loop
+  for v_line in select * from jsonb_to_recordset(v_lines) as l(line_id uuid, line_no integer, product_id uuid, base_qty numeric, description_norm text, part_number_norm text) where l.base_qty <> 0 order by l.line_no loop
     perform public._ledger_add(v_doc.shop_id, v_line.product_id, v_sign * v_line.base_qty, 'document_line',
       auth.uid(), v_doc.id, v_line.line_id);
   end loop;
@@ -150,7 +148,7 @@ begin
   if v_doc.direction = 'receipt' and v_doc.counterparty_id is not null then
     insert into public.supplier_aliases (shop_id, counterparty_id, description_norm, part_number_norm, product_id, last_confirmed_by)
     select distinct on (l.description_norm) v_doc.shop_id, v_doc.counterparty_id, l.description_norm, l.part_number_norm, l.product_id, auth.uid()
-    from _post_lines l where l.description_norm is not null
+    from jsonb_to_recordset(v_lines) as l(line_id uuid, line_no integer, product_id uuid, base_qty numeric, description_norm text, part_number_norm text) where l.description_norm is not null
     order by l.description_norm, l.line_no
     on conflict (shop_id, counterparty_id, description_norm) do update
       set product_id = excluded.product_id,
@@ -171,7 +169,7 @@ begin
 
   perform public._audit(v_doc.shop_id, 'document.posted', 'document', v_doc.id,
     jsonb_build_object('direction', v_doc.direction, 'idempotency_key', p_idempotency_key,
-      'movements', (select jsonb_agg(jsonb_build_object('product_id', product_id, 'qty', (v_sign * base_qty)::text)) from _post_lines)));
+      'movements', (select jsonb_agg(jsonb_build_object('product_id', l.product_id, 'qty', (v_sign * l.base_qty)::text)) from jsonb_to_recordset(v_lines) as l(line_id uuid, line_no integer, product_id uuid, base_qty numeric, description_norm text, part_number_norm text))));
 
   return jsonb_build_object(
     'document_id', v_doc.id, 'status', v_doc.status, 'posted_at', v_doc.posted_at,
