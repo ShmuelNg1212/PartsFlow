@@ -676,6 +676,15 @@ export type Database = {
         Args: { p_document_id: string; p_reason: string }
         Returns: Json
       }
+      save_draft: {
+        Args: {
+          p_document_id: string
+          p_expected_updated_at: string
+          p_header: Json
+          p_lines: Json
+        }
+        Returns: Json
+      }
       search_products: {
         Args: { p_query: string; p_shop_id: string }
         Returns: {

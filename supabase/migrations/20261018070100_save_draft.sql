@@ -3,11 +3,6 @@
 --
 -- Error codes: 42501 not permitted, 55000 not a draft, PF004 someone else saved first, 22023 invalid value.
 
--- Renumbering lines inside one transaction needs the uniqueness check at commit.
-alter table public.document_lines drop constraint document_lines_document_id_line_no_key;
-alter table public.document_lines add constraint document_lines_document_id_line_no_key
-  unique (document_id, line_no) deferrable initially deferred;
-
 create function public.save_draft(
   p_document_id uuid,
   p_expected_updated_at timestamptz,
@@ -86,6 +81,9 @@ begin
     -- Touch the row so the next save sees a new version.
     update public.documents set notes = notes where id = p_document_id;
   end if;
+
+  -- Move current line numbers out of the way, so renumbering cannot hit the (document_id, line_no) unique key.
+  update public.document_lines set line_no = line_no + 1000000 where document_id = p_document_id;
 
   v_no := 0;
   for v_line in select value from jsonb_array_elements(coalesce(p_lines, '[]'::jsonb)) loop
